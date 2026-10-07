@@ -1,0 +1,129 @@
+/* Axonix — monochrome. Dense, precise, alive, local. */
+:root {
+  --bg: #0d0f12;
+  --surface: #14171b;
+  --raised: #1c1f24;
+  --border: #31363d;
+  --border-strong: #5b626b;
+  --text: #e8eaed;
+  --text-2: #a2a9b2;
+  --text-3: #7c838d;
+  --accent: #ffffff;
+  --on-accent: #000000;
+  --r: 5px;
+  --dur: 120ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #e8eaed;
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --border: #c9ced4;
+    --border-strong: #5b626b;
+    --text: #08090b;
+    --text-2: #5b626b;
+    --text-3: #7c838d;
+    --accent: #000000;
+    --on-accent: #ffffff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 300px;
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 "Geist", "Segoe UI Variable", system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.logo { width: 18px; height: 18px; color: var(--text); flex: none; }
+.wordmark { font-weight: 600; letter-spacing: 0.14em; font-size: 12px; }
+.link {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 11px;
+  text-decoration: none;
+}
+.link:hover { color: var(--text); }
+
+.rule { height: 1px; background: var(--border); margin: 12px 0; }
+
+label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font: inherit;
+}
+input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent);
+}
+
+button {
+  width: 100%;
+  height: 30px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+button:hover:not(:disabled) { border-color: var(--border-strong); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 500; }
+button.ghost { background: transparent; color: var(--text-2); }
+
+.row { display: flex; gap: 6px; margin-top: 6px; }
+
+.session {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.topic { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.count { margin-left: auto; color: var(--text-3); font-size: 11px; flex: none; }
+
+#status {
+  margin: 10px 0 0;
+  min-height: 15px;
+  font-size: 11px;
+  color: var(--text-3);
+  word-break: break-word;
+}
+/* Monochrome: severity is carried by weight and a glyph, never hue alone. */
+#status.ok::before   { content: "✓ "; }
+#status.err::before  { content: "✕ "; }
+#status.warn::before { content: "! "; }
+#status.err  { color: var(--text); font-weight: 500; }
+#status.warn { color: var(--text-2); }

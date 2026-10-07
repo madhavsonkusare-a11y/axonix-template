@@ -1,0 +1,146 @@
+/* Axonix UI — Dense · Precise · Alive · Local. Monochrome.
+
+   What lives here: the window chrome, the command palette and the error
+   boundary — the shell that is the same whichever app is open. Everything
+   the launcher and the finance tracker need is in `finance.css`, which is
+   the only place hue is spent.
+
+   The vault dashboards' styles (page/section/tile/panel/notes/badge/bars/
+   table/timeline/prose/callout/setup/agents) were removed alongside their
+   components; git has them if the ViewSpec renderer comes back. */
+
+* { box-sizing: border-box; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
+/* Motion is an authored part of Axonix's identity. The owner has explicitly
+   chosen full motion throughout the app, independent of the OS preference. */
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--ts-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; color: inherit; }
+
+/* Everything below the frameless window chrome. */
+.shell { height: 100%; min-height: 0; }
+
+/* ---------- window chrome (frameless Tauri) ---------- */
+
+.titlebar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--toolbar-h);
+  padding-left: var(--sp-3);
+  background: transparent;
+  border-bottom: none;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Floats over each screen's top bar: clicks fall through to it. Only the
+     window controls catch the pointer; dragging is handled in Titlebar.tsx. */
+  pointer-events: none;
+}
+.titlebar__id { display: none; }
+.titlebar__logo { width: 14px; height: 14px; }
+
+.titlebar__status {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin: 0 auto;
+  font-size: var(--ts-xs); color: var(--text-muted);
+}
+.titlebar__pulse { display: block; width: 56px; height: 2px; border-radius: 1px; }
+
+/* ---------- view render error boundary fallback ---------- */
+
+/* Shown when a frame throws during render. Keeps the rest of the shell alive.
+   Monochrome — danger is carried by a dashed left border + glyph, never colour
+   alone, per the status token contract. */
+.view-error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  margin: var(--sp-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-left-width: 3px;
+  border-left-style: dashed;
+  border-radius: var(--r-sm);
+}
+.view-error__head { display: flex; align-items: baseline; gap: var(--sp-2); }
+.view-error__glyph { flex: none; width: 1rem; font-weight: var(--fw-bold); text-align: center; }
+.view-error__title { font-weight: var(--fw-medium); }
+.view-error__msg {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--ts-xs);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 12rem;
+  overflow: auto;
+}
+.view-error__retry {
+  align-self: flex-start;
+  height: var(--control-h);
+  padding: 0 var(--sp-3);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.view-error__retry:hover { border-color: var(--border-strong); color: var(--text-primary); }
+/* ---------- command palette (Cmd/Ctrl-K) ---------- */
+
+.palette__scrim {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; justify-content: center; align-items: flex-start;
+  padding-top: 14vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  animation: fade var(--dur-fast) var(--ease-out);
+}
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+
+.palette {
+  width: min(560px, calc(100vw - 2rem));
+  max-height: 60vh;
+  display: flex; flex-direction: column;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+.palette__input { display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); }
+.palette__input input { flex: 1; height: 42px; background: none; border: 0; outline: none; color: var(--text-primary); }
+.palette [cmdk-list] { overflow-y: auto; padding: var(--sp-1); }
+.palette [cmdk-group-heading] { padding: var(--sp-2) var(--sp-2) var(--sp-1); font-size: var(--ts-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.palette [cmdk-item] {
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--row-h); padding: 0 var(--sp-2);
+  border-radius: var(--r-sm); cursor: pointer; color: var(--text-secondary);
+}
+.palette [cmdk-item][data-selected='true'] { background: var(--bg-active); color: var(--text-primary); }
+.palette__hint { margin-left: auto; font-family: var(--font-mono); font-size: var(--ts-xs); color: var(--text-muted); }
+.palette [cmdk-empty] { padding: var(--sp-6); text-align: center; color: var(--text-muted); font-size: var(--ts-sm); }
+
+/* ---------- the backdrop (Backdrop.tsx) ----------
+   A still mesh gradient with grain behind Home, Finance and Tasks. The canvas
+   fills the element; the element decides where the colour lives and fades it
+   out, so text always sits on a dark, quiet ground. */
+
+.backdrop { overflow: hidden; }
+.backdrop__mesh { position: absolute; inset: 0; width: 100%; height: 100%; }
+.backdrop__mesh canvas { display: block; width: 100% !important; height: 100% !important; }

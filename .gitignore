@@ -1,0 +1,44 @@
+# Rust — target/ is redirected outside the vault via .cargo/config.toml,
+# but keep this in case anyone overrides it.
+target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+dist-social/
+dist-app/
+dist-social-dev/
+dist-social-pack/
+.vite/
+*.tsbuildinfo
+
+# Axonix local state — the index is a rebuildable cache, never commit it.
+.axonix/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Secrets. Nothing resembling a credential belongs in this repo.
+.env
+.env.*
+!.env.example
+*.token
+*token*.txt
+secrets.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Obsidian must not follow us in here
+.obsidian/
+
+# Local test profiles and GPU caches written by Electron test runs.
+# A Chromium profile can hold cookies and sessions: never commit one.
+.scratch-social-profile/
+LocalLow/
+*.lnk

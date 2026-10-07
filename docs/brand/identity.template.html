@@ -1,0 +1,754 @@
+<title>Axonix Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Geist+Mono:wght@400;500&family=Geist:wght@300..700&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --ground: #06070a;
+  --ground-2: #0b0d12;
+  --ink: #f7f9fc;
+  --ink-2: rgba(235, 240, 250, .84);
+  --muted: rgba(226, 234, 252, .62);
+  --faint: rgba(226, 234, 252, .46);
+  --hair: rgba(255, 255, 255, .08);
+  --hair-2: rgba(255, 255, 255, .13);
+  --ice: #7cc4ff;
+  --ice-text: #bfe3ff;
+  --ice-soft: rgba(124, 196, 255, .14);
+  --pos: #5fe0a2;
+  --neg: #ff6b6b;
+  --paper: #eceef2;
+  --paper-ink: #0d0f12;
+  --ui: "Geist", "Segoe UI Variable", system-ui, sans-serif;
+  --mono: "Geist Mono", "Cascadia Code", ui-monospace, monospace;
+  --num: "Azeret Mono", "Geist Mono", ui-monospace, monospace;
+  --eo: cubic-bezier(.16, 1, .3, 1);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 96px; display: grid; gap: 88px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.eyebrow { font: 500 10.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.lede { max-width: 64ch; color: var(--muted); font-size: 14.5px; }
+.sec { display: grid; gap: 22px; }
+.sec__head { display: grid; gap: 10px; }
+.sec__head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.028em; line-height: 1.12; }
+.note { color: var(--faint); font-size: 12.5px; }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+code, .code { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+
+/* ---------- masthead ---------- */
+.mast { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.mast__id { display: flex; align-items: center; gap: 14px; }
+.mast__id svg { height: 26px; width: auto; color: var(--ink); }
+.mast__meta { font: 500 11px/1.4 var(--mono); letter-spacing: .08em; color: var(--faint); text-transform: uppercase; }
+.intro { display: grid; gap: 14px; }
+.intro h1 { font-size: clamp(34px, 5.4vw, 56px); font-weight: 600; letter-spacing: -.035em; line-height: 1.02; max-width: 16ch; }
+
+/* ---------- the window (hero) ---------- */
+.win {
+  position: relative; width: 100%; aspect-ratio: 1040 / 650; border-radius: 18px; overflow: hidden;
+  background: var(--ground);
+  box-shadow: 0 0 0 1px var(--hair), 0 40px 90px -40px rgba(0, 0, 0, .9);
+}
+.screen { position: absolute; left: 0; top: 0; width: 1040px; height: 650px; transform-origin: 0 0; transform: scale(var(--fit, 1)); }
+.g-base { position: absolute; inset: 0; background: radial-gradient(70% 60% at 50% 48%, #0a0d14 0%, var(--ground) 70%); }
+.g-fields {
+  position: absolute; inset: 0; opacity: 0;
+  background:
+    radial-gradient(58% 60% at 84% 4%, rgba(124, 196, 255, .40), rgba(124, 196, 255, 0) 70%),
+    radial-gradient(46% 55% at 62% 30%, rgba(63, 143, 212, .22), rgba(63, 143, 212, 0) 72%),
+    radial-gradient(60% 70% at 6% 100%, rgba(26, 64, 132, .42), rgba(26, 64, 132, 0) 70%),
+    radial-gradient(40% 40% at 40% 78%, rgba(13, 51, 66, .45), rgba(13, 51, 66, 0) 70%);
+}
+.g-grain { position: absolute; inset: 0; background-image: var(--grain); background-size: 160px; opacity: .2; mix-blend-mode: overlay; pointer-events: none; }
+.caption { position: absolute; top: 0; right: 0; display: flex; }
+.caption span { width: 46px; height: 32px; display: grid; place-items: center; color: rgba(226, 234, 252, .38); font: 400 11px var(--ui); }
+
+.stage { position: absolute; left: 0; top: 0; width: 300px; height: 320px; transform-origin: 0 0; will-change: transform; }
+.layer { position: absolute; left: 0; top: 0; width: 300px; height: 320px; overflow: visible; will-change: transform, opacity; }
+.dot { position: absolute; border-radius: 50%; will-change: transform, opacity; pointer-events: none; }
+.halo { background: radial-gradient(circle, rgba(124, 196, 255, .30) 0%, rgba(124, 196, 255, .10) 38%, rgba(124, 196, 255, 0) 68%); }
+.nglow { background: radial-gradient(circle, rgba(214, 238, 255, .9) 0 16%, rgba(124, 196, 255, .42) 36%, rgba(124, 196, 255, 0) 70%); }
+.spark { background: radial-gradient(circle, #fff 0 22%, rgba(191, 227, 255, .95) 34%, rgba(124, 196, 255, .5) 54%, rgba(124, 196, 255, 0) 74%); }
+.soma { background: radial-gradient(circle, rgba(255, 255, 255, .95) 0 7%, rgba(191, 227, 255, .6) 20%, rgba(124, 196, 255, .22) 42%, rgba(124, 196, 255, 0) 66%); }
+.flare { border: 1.5px solid rgba(191, 227, 255, .95); box-shadow: 0 0 14px rgba(124, 196, 255, .65), inset 0 0 10px rgba(124, 196, 255, .35); }
+.letter { position: absolute; overflow: visible; will-change: transform, opacity; }
+
+/* Today cockpit (example content) */
+.home > * { position: absolute; }
+.glass-thick {
+  background: rgba(24, 29, 38, .44);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(22px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 12px 32px rgba(0, 0, 0, .35);
+}
+.glass-thin {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .078), rgba(255, 255, 255, .026));
+  border: 1px solid rgba(255, 255, 255, .085);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .11);
+}
+.card { border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.card .k { font: 500 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.card h4 { margin: 0; font: 600 15px/1.3 var(--ui); letter-spacing: -.01em; color: var(--ink); }
+.card .m { font-size: 12px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 980px; font: 500 12.5px var(--ui); white-space: nowrap; }
+.pill--primary { background: #f7f9fc; color: #06070a; }
+.pill--quiet { border: 1px solid rgba(255, 255, 255, .16); color: var(--ink-2); }
+.flag { display: inline-flex; align-items: center; gap: 4px; font: 500 11px var(--num); color: #ffc496; }
+.blocks { display: grid; gap: 6px; margin-top: 2px; position: relative; }
+.blk { display: flex; gap: 10px; align-items: baseline; font-size: 12.5px; color: var(--ink-2); padding: 5px 8px; border-radius: 9px; border-left: 2px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .03); }
+.blk .num { font-size: 11px; color: var(--muted); min-width: 38px; }
+.blk--live { border-left-color: var(--ice); background: var(--ice-soft); color: #eaf6ff; }
+.nowline { position: absolute; left: -4px; right: 0; top: 46px; height: 1px; background: var(--ice); box-shadow: 0 0 8px var(--ice); }
+.nowline::before { content: ""; position: absolute; left: -2px; top: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--ice); }
+.big { font: 500 27px/1 var(--num); letter-spacing: -.045em; color: var(--ink); }
+.bars { display: flex; align-items: flex-end; gap: 7px; height: 64px; margin-top: auto; }
+.bars span { flex: 1; border-radius: 6px 6px 3px 3px; background: rgba(255, 255, 255, .14); }
+.bars span.t { background: var(--ice); }
+.days { display: flex; gap: 7px; font: 500 9.5px var(--mono); color: var(--faint); }
+.days span { flex: 1; text-align: center; }
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.thumbs span { aspect-ratio: 1; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .08); }
+.timer { font: 500 46px/1 var(--num); letter-spacing: -.05em; color: var(--ink); }
+.ring { width: 92px; height: 92px; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.btn {
+  height: 34px; padding: 0 16px; border-radius: 980px; border: 1px solid var(--hair-2); background: rgba(255, 255, 255, .04);
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  transition: transform 120ms var(--eo), background-color 120ms var(--eo), border-color 120ms var(--eo);
+}
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn:active { transform: scale(.97); }
+.btn--primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btn--primary:hover { background: #fff; }
+.btn[aria-pressed="true"] { border-color: rgba(124, 196, 255, .6); background: var(--ice-soft); color: var(--ice-text); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--ice); }
+.timeline { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
+.timeline div { background: var(--ground); padding: 12px 14px; display: grid; gap: 4px; }
+.timeline .num { font-size: 12px; color: var(--ice-text); }
+.timeline span:last-child { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+/* ---------- specimens ---------- */
+.panel { border: 1px solid var(--hair); border-radius: 18px; background: var(--ground-2); padding: 22px; }
+.panel--paper { background: var(--paper); color: var(--paper-ink); border-color: transparent; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.spec-title { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.spec-title b { font-weight: 600; font-size: 13.5px; }
+.spec-title span { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.panel--paper .spec-title span { color: rgba(13, 15, 18, .5); }
+.anatomy { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+.anatomy svg { width: 100%; height: auto; display: block; }
+.facts { display: grid; gap: 14px; }
+.fact { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.fact i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(124, 196, 255, .5); display: grid; place-items: center; font: 500 10.5px var(--mono); color: var(--ice-text); font-style: normal; }
+.fact b { display: block; font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.fact span { color: var(--muted); font-size: 13px; }
+.ladder { overflow-x: auto; }
+.ladder table { border-collapse: collapse; min-width: 520px; width: 100%; }
+.ladder th { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 0 0 12px; }
+.panel--paper .ladder th { color: rgba(13, 15, 18, .5); }
+.ladder td { padding: 10px 0; vertical-align: middle; border-top: 1px solid var(--hair); }
+.panel--paper .ladder td { border-top-color: rgba(13, 15, 18, .1); }
+.ladder td:first-child { font-size: 12.5px; width: 92px; }
+.ladder svg { display: block; }
+.wm-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; padding-block: 22px; border-top: 1px solid var(--hair); }
+.wm-row:first-child { border-top: 0; padding-top: 4px; }
+.wm-row svg { height: 52px; width: auto; max-width: 100%; color: var(--ink); display: block; }
+.wm-row small { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.list { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.list li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; color: var(--muted); font-size: 13.5px; }
+.list li::before { content: ""; width: 5px; height: 5px; margin-top: 8px; border-radius: 50%; background: var(--ice); }
+.list b { color: var(--ink); font-weight: 600; }
+.lockups { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
+.lockups .panel { display: grid; place-items: center; min-height: 260px; }
+.lockups svg { color: var(--ink); display: block; max-width: 100%; }
+.icons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.icon-cell { display: grid; justify-items: center; gap: 14px; padding: 26px 18px; }
+.icon-cell img, .icon-cell svg { width: min(180px, 100%); height: auto; display: block; }
+.icon-cell p { font-size: 12.5px; color: var(--muted); text-align: center; max-width: 34ch; }
+.taskbars { display: grid; gap: 10px; }
+.taskbar { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-radius: 12px; flex-wrap: wrap; }
+.taskbar--dark { background: #1c1d20; }
+.taskbar--light { background: #f1f2f4; color: #1a1b1e; }
+.taskbar small { font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; opacity: .6; min-width: 64px; }
+.taskbar .pair { display: flex; align-items: center; gap: 8px; }
+.taskbar .pair span { font-size: 11px; opacity: .6; }
+.taskbar img, .taskbar svg { display: block; }
+.states { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.state { border: 1px solid var(--hair); border-radius: 18px; background: var(--ground-2); padding: 16px; display: grid; gap: 12px; }
+.state__stage { position: relative; height: 150px; border-radius: 12px; overflow: hidden; background: radial-gradient(80% 80% at 50% 60%, #0d1118, var(--ground)); }
+.state__stage .mini { position: absolute; left: 50%; top: 50%; width: 300px; height: 320px; transform-origin: 0 0; }
+.state b { font-weight: 600; }
+.state p { font-size: 12.5px; color: var(--muted); }
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.sw { border-radius: 14px; border: 1px solid var(--hair); overflow: hidden; background: var(--ground-2); }
+.sw i { display: block; height: 72px; }
+.sw div { padding: 10px 12px; display: grid; gap: 2px; }
+.sw b { font-size: 13px; font-weight: 600; }
+.sw span { font: 500 11px var(--mono); color: var(--faint); }
+.materials { position: relative; border-radius: 18px; overflow: hidden; min-height: 260px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 28px; }
+.materials__bg { position: absolute; inset: 0; background:
+  radial-gradient(50% 70% at 20% 10%, rgba(124, 196, 255, .45), rgba(124, 196, 255, 0) 70%),
+  radial-gradient(50% 60% at 90% 100%, rgba(26, 64, 132, .6), rgba(26, 64, 132, 0) 70%), var(--ground); }
+.materials__bg::after { content: "AXONIX AXONIX AXONIX"; position: absolute; left: -10px; top: 40%; font: 700 88px/1 var(--ui); letter-spacing: -.04em; color: rgba(255, 255, 255, .07); white-space: nowrap; }
+.materials .g-grain { opacity: .22; }
+.mat { position: relative; border-radius: 18px; padding: 18px; display: grid; align-content: space-between; gap: 30px; min-height: 196px; }
+.mat b { font-size: 14px; font-weight: 600; }
+.mat p { font-size: 12.5px; color: var(--muted); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ring-demo { box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--ice); }
+.next { border-top: 1px solid var(--hair); padding-top: 28px; display: grid; gap: 8px; }
+.next b { font-size: 16px; font-weight: 600; }
+.next p { color: var(--muted); max-width: 70ch; }
+.guides { opacity: 0; transition: opacity 180ms var(--eo); }
+.show-guides .guides { opacity: 1; }
+
+/* startup zoom and the Home landing (tiles after React Bits GlassIcons, MIT + Commons Clause) */
+.zoom { position: absolute; will-change: transform, opacity; }
+.zoom svg, .lk-mark { display: block; width: 100%; height: 100%; }
+.lk-mark { position: absolute; }
+.greet2 { left: 0; width: 1040px; top: 130px; text-align: center; font: 400 13.5px/1.2 var(--ui); color: var(--muted); }
+.greet2 i { font-style: normal; color: var(--faint); margin: 0 4px; }
+.greet2 b { color: var(--ice-text); font-weight: 500; }
+.greet2 kbd { font: 500 10.5px var(--mono); padding: 3px 7px; border-radius: 980px; border: 1px solid rgba(255,255,255,.12); color: var(--ink-2); }
+.g-grain--top { opacity: .12; }
+.tile-wrap { width: 96px; display: grid; justify-items: center; gap: 12px; cursor: pointer; }
+.tile { position: relative; width: 96px; height: 96px; perspective: 24em; transform-style: preserve-3d; transition: transform 160ms var(--eo); }
+.tile__back, .tile__front { position: absolute; inset: 0; border-radius: 28px; transition: transform 300ms var(--eo), opacity 300ms var(--eo); }
+.tile__back { transform: rotate(12deg); transform-origin: 100% 100%; opacity: .92; box-shadow: .5em -.5em .75em rgba(4, 6, 12, .35); }
+.tile__front { display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.15); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), inset 0 1px 0 rgba(255,255,255,.35); -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3); transform-origin: 80% 50%; }
+.tile__front svg { width: 36px; height: 36px; }
+.tile-wrap:hover .tile__back { transform: rotate(22deg) translate3d(-.4em, -.4em, .4em); }
+.tile-wrap:hover .tile__front { transform: translateZ(1.6em); }
+.tile-wrap:active .tile { transform: scale(.97); }
+.tile__label { font: 500 13px var(--ui); color: var(--ink-2); }
+.badge { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #ff453a; color: #fff; font-size: 11.5px; line-height: 24px; text-align: center; transform: translateZ(2em); box-shadow: 0 0 0 2px #0b0e14; }
+
+@media (max-width: 860px) {
+  .grid4, .states, .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .anatomy, .lockups, .icons, .materials { grid-template-columns: minmax(0, 1fr); }
+  .timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .wrap { gap: 64px; }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .wm-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .wm-row svg { height: 38px; }
+  .sec__head h2 { font-size: 25px; }
+}
+</style>
+
+<!-- shared SVG definitions (not display:none, so gradients still resolve) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <path id="mark" d="__MARK__"/>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11141b"/><stop offset="1" stop-color="#06070a"/></linearGradient>
+    <radialGradient id="axonGlow" cx="150" cy="236" r="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7cc4ff" stop-opacity=".46"/>
+      <stop offset=".42" stop-color="#3f8fd4" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#0a2240" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".34"/>
+      <stop offset=".3" stop-color="#fff" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".03"/>
+    </linearGradient>
+    <filter id="grainF" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .5 0 0 0 -.2"/>
+    </filter>
+    <clipPath id="plateClip"><rect width="300" height="300" rx="66"/></clipPath>
+    <symbol id="icon-new" viewBox="0 0 300 300">
+      <g clip-path="url(#plateClip)">
+        <rect width="300" height="300" fill="url(#plate)"/>
+        <rect width="300" height="300" fill="url(#axonGlow)"/>
+        <rect width="300" height="300" filter="url(#grainF)" opacity=".55"/>
+      </g>
+      <rect x=".75" y=".75" width="298.5" height="298.5" rx="65.25" fill="none" stroke="url(#bevel)" stroke-width="1.5"/>
+      <use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+    </symbol>
+    <symbol id="icon-new-micro" viewBox="0 0 300 300">
+      <g clip-path="url(#plateClip)">
+        <rect width="300" height="300" fill="url(#plate)"/>
+        <rect width="300" height="300" fill="url(#axonGlow)"/>
+      </g>
+      <use href="#mark" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+    </symbol>
+    <symbol id="icon-old" viewBox="0 0 300 300">
+      <rect width="300" height="300" rx="66" fill="#0D0F12"/>
+      <use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -125)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+
+  <header class="mast">
+    <div class="mast__id" id="mastLockup" aria-label="Axonix"></div>
+    <div class="mast__meta">Identity review · 28 Sep 2026</div>
+  </header>
+
+  <section class="intro" aria-labelledby="t-intro">
+    <h1 id="t-intro">The same mark, drawn with more care, and brought to life.</h1>
+    <p class="lede">Nothing about the shape changes. The refinements fix how it renders small, where it sits in the icon, and how the name is spaced beside it. The mark also gets motion: it opens the app by pulling back from full screen, and its parts become the assistant's states.</p>
+  </section>
+
+  <!-- 1 · STARTUP -->
+  <section class="sec" aria-labelledby="t-signal">
+    <div class="sec__head">
+      <span class="eyebrow">Startup</span>
+      <h2 id="t-signal">The mark pulls back, and Home forms around it</h2>
+      <p class="lede">The mark opens filling the window, centred on its body, then zooms out to its place beside the name. The greeting, the overview cards and the module tiles unfold from it. It is one scale animation plus fades, all on the compositor, so the app loading underneath can't make it stutter.</p>
+    </div>
+    <div class="win" id="win" role="img" aria-label="Axonix startup: the mark zooms out from full screen to the Home lockup, then the overview cards and module tiles form below it">
+      <div class="screen" id="screen">
+        <div class="g-base"></div>
+        <div class="g-fields" id="fields"></div>
+        <div class="g-grain"></div>
+        <div class="caption" aria-hidden="true"><span>&#x2014;</span><span>&#x25A2;</span><span>&#x2715;</span></div>
+        <div class="home" id="home" aria-hidden="true">
+          <svg class="lk-mark" id="lkMark" viewBox="30 10 240 230" preserveAspectRatio="none"><use href="#mark" fill="#f7f9fc"/></svg>
+          <div class="greet2" data-rise>Good evening <i>&#183;</i> Monday 28 September <i>&#183;</i> <b>3 due today</b> <i>&#183;</i> <kbd>Ctrl K</kbd> to ask or add anything</div>
+          <article class="card glass-thin" data-rise style="left:72px;top:172px;width:212px;height:196px">
+            <span class="k">Next up</span>
+            <h4>Axonix overhaul, phase 1</h4>
+            <span class="m">Tokens, the refined mark, the startup zoom</span>
+            <span class="flag">&#9873; P2 &#183; due 21:00</span>
+            <span style="margin-top:auto;align-self:flex-start" class="pill pill--quiet">Open task</span>
+          </article>
+          <article class="card glass-thin" data-rise style="left:300px;top:172px;width:212px;height:196px">
+            <span class="k">Today</span>
+            <div class="blocks">
+              <div class="blk"><span class="num">17:30</span>Gym</div>
+              <div class="blk blk--live"><span class="num">18:30</span>Deep work</div>
+              <div class="blk"><span class="num">20:30</span>Call home</div>
+              <div class="blk"><span class="num">21:30</span>Read</div>
+              <div class="nowline"></div>
+            </div>
+          </article>
+          <article class="card glass-thin" data-rise style="left:528px;top:172px;width:212px;height:196px">
+            <span class="k">This week</span>
+            <span class="big num">&#8377;4,820</span>
+            <span class="m">spent &#183; <span class="num">&#8722;12%</span> on last week</span>
+            <div class="bars" style="height:52px"><span style="height:48%"></span><span style="height:30%"></span><span style="height:72%"></span><span style="height:22%"></span><span style="height:54%"></span><span style="height:38%"></span><span class="t" style="height:62%"></span></div>
+          </article>
+          <article class="card glass-thin" data-rise style="left:756px;top:172px;width:212px;height:196px">
+            <span class="k">Focus</span>
+            <span class="timer" style="font-size:40px">25:00</span>
+            <span class="m">On: Axonix overhaul, phase 1 &#183; 2h 10m today</span>
+            <span class="pill pill--primary" style="margin-top:auto;align-self:flex-start">Start focus</span>
+          </article>
+          <div class="tile-wrap" data-rise="tile" style="left:132px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#9db9ff,#3d6fe6)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span></span><span class="tile__label">Finance</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:268px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#cdeaff,#4f9fe6)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.3 4.6-5"/></svg></span><span class="badge num">3</span></span><span class="tile__label">Tasks</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:404px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#b3ecd2,#34b37a)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span></span><span class="tile__label">Calendar</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:540px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#eef0f3,#7d858f)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12A.5.5 0 0 1 6 20z"/><path d="M9 11h7M9 15h5"/></svg></span></span><span class="tile__label">Notes</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:676px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#f5dcc0,#c0875a)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V9M10 13h4"/></svg></span></span><span class="tile__label">Storeroom</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:812px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#ffcfa6,#f2694f)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="10.5" r="2.5"/><path d="M3 19c.8-3 2.8-4.5 5-4.5s4.2 1.5 5 4.5M14 15.2c.8-.5 1.6-.7 2.5-.7 1.9 0 3.4 1.3 4 3.5"/></svg></span><span class="badge num">12</span></span><span class="tile__label">Social</span></div>
+        </div>
+        <div class="zoom" id="zoom"><svg viewBox="30 10 240 230" preserveAspectRatio="none"><use href="#mark" fill="#f7f9fc"/></svg></div>
+        <div class="g-grain g-grain--top"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn btn--primary" id="replay" type="button">Replay</button>
+      <button class="btn" id="slow" type="button" aria-pressed="false">Slow motion (&#188;&#215;)</button>
+      <button class="btn" id="skip" type="button">Skip to end</button>
+      <span class="note">Any key skips, as it will in the app. Card content is an example.</span>
+    </div>
+    <div class="timeline" aria-label="Sequence timing">
+      <div><span class="num">0.00s</span><span>The mark fills the window, centred on its body</span></div>
+      <div><span class="num">0.14s</span><span>It pulls back: one zoom, eased in and out</span></div>
+      <div><span class="num">1.00s</span><span>AXONIX slides out beside it</span></div>
+      <div><span class="num">1.08s</span><span>The greeting settles under the lockup</span></div>
+      <div><span class="num">1.19s</span><span>Overview cards unfold, left to right</span></div>
+      <div><span class="num">1.34s</span><span>Module tiles follow. Settled by 1.8s</span></div>
+    </div>
+  </section>
+
+  <!-- 2 · THE MARK -->
+  <section class="sec" aria-labelledby="t-mark">
+    <div class="sec__head">
+      <span class="eyebrow">The mark</span>
+      <h2 id="t-mark">It already draws a neuron</h2>
+      <p class="lede">Three round terminals feed one body that narrows to a single point. That reading drives the assistant's states and the loading pulse the app already has, and the startup zoom centres on the body.</p>
+    </div>
+    <div class="anatomy">
+      <div class="panel">
+        <svg viewBox="0 0 520 300" role="img" aria-label="The mark with its parts labelled">
+          <g transform="translate(110 20)">
+            <use href="#mark" fill="#f7f9fc"/>
+          </g>
+          <g stroke="rgba(124,196,255,.7)" stroke-width="1" fill="none">
+            <path d="M282 50 H400"/><path d="M382 190 H430"/><path d="M138 190 H90"/><path d="M250 140 H96"/><path d="M262 260 H400"/>
+          </g>
+          <g fill="#7cc4ff"><circle cx="282" cy="50" r="3"/><circle cx="382" cy="190" r="3"/><circle cx="138" cy="190" r="3"/><circle cx="250" cy="140" r="3"/><circle cx="262" cy="260" r="3"/></g>
+          <g font-family="Geist Mono, ui-monospace, monospace" font-size="11" fill="rgba(226,234,252,.7)" letter-spacing=".06em">
+            <text x="406" y="54">INPUT 1</text><text x="436" y="194">INPUT 3</text><text x="20" y="194">INPUT 2</text>
+            <text x="52" y="144">BODY</text><text x="406" y="264">OUTPUT</text>
+          </g>
+        </svg>
+      </div>
+      <div class="facts">
+        <div class="fact"><i>1</i><div><b>Terminals are inputs</b><span>Money, time and ideas arrive from the modules. The nodes breathe while the assistant listens.</span></div></div>
+        <div class="fact"><i>2</i><div><b>The body is Axonix</b><span>Signals meet here. The startup zoom is centred on it, and the glow sits here while the assistant works.</span></div></div>
+        <div class="fact"><i>3</i><div><b>The point is the output</b><span>What gets done. The only place the mark fires light from, which is also where the new icon's glow comes from.</span></div></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <div class="spec-title"><b>Optical sizes, on dark</b><span>Rendered at real pixels</span></div>
+        <div class="ladder" id="ladderDark"></div>
+      </div>
+      <div class="panel panel--paper">
+        <div class="spec-title"><b>Optical sizes, on light</b><span>Rendered at real pixels</span></div>
+        <div class="ladder" id="ladderLight"></div>
+      </div>
+    </div>
+    <ul class="list">
+      <li><span><b>The necks are 4 units wide.</b> At 32px and below that is under half a pixel, so the three nodes float free of the body. Measured, not estimated: 4 units at the top neck, 4 at the side necks.</span></li>
+      <li><span><b>Two optical masters fix it without touching the drawing.</b> The same outline grows by 1.5 units from 33 to 95px and by 3.5 units at 32px and under (necks 7 and 11 units). From 96px up, the original draws.</span></li>
+    </ul>
+
+    <div class="grid2">
+      <div class="panel" id="centreDemo">
+        <div class="spec-title"><b>Optical centre</b><span>Icon plate, 300 units</span></div>
+        <div class="grid2" style="gap:12px">
+          <figure style="margin:0;display:grid;gap:8px;justify-items:center">
+            <svg viewBox="0 0 300 300" width="100%" style="max-width:200px"><use href="#icon-old"/>
+              <g class="guides"><path d="M0 150H300" stroke="#7cc4ff" stroke-dasharray="5 5"/><circle cx="150" cy="165.6" r="5" fill="#ffc496"/></g></svg>
+            <figcaption class="note">Now: box centred</figcaption>
+          </figure>
+          <figure style="margin:0;display:grid;gap:8px;justify-items:center">
+            <svg viewBox="0 0 300 300" width="100%" style="max-width:200px"><rect width="300" height="300" rx="66" fill="#0D0F12"/><use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+              <g class="guides"><path d="M0 150H300" stroke="#7cc4ff" stroke-dasharray="5 5"/><circle cx="150" cy="157.9" r="5" fill="#ffc496"/></g></svg>
+            <figcaption class="note">Refined: weight centred</figcaption>
+          </figure>
+        </div>
+        <div class="row" style="margin-top:14px"><button class="btn" id="guides" type="button" aria-pressed="false">Show centres</button><span class="note">Blue: plate centre. Amber: the mark's centre of weight.</span></div>
+      </div>
+      <div class="panel" style="display:grid;align-content:center;gap:14px">
+        <b style="font-size:15px">The weight sits 10% low</b>
+        <p class="note" style="font-size:13.5px;color:var(--muted)">The mark's box is centred at y&nbsp;=&nbsp;<span class="num">124.6</span>, but its ink is centred at y&nbsp;=&nbsp;<span class="num">147.3</span>. The heavy body is low and the top is a single small node. Centring the box leaves the icon looking dropped.</p>
+        <p class="note" style="font-size:13.5px;color:var(--muted)">The refined icon centres at y&nbsp;=&nbsp;<span class="num">136</span>, halfway between the two. That is the usual optical compromise: the sharp point carries almost no weight, so its margin reads larger than it measures.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WORDMARK -->
+  <section class="sec" aria-labelledby="t-word">
+    <div class="sec__head">
+      <span class="eyebrow">Wordmark</span>
+      <h2 id="t-word">The name follows the mark</h2>
+      <p class="lede">The old wordmark was heavy, tightly and unevenly spaced (the X and O overlap by 1.8 units), and set 6 units under the mark's point. The refined one is drawn from strokes on a 100-unit cap height, so every letter shares one weight.</p>
+    </div>
+    <div class="panel">
+      <div class="wm-row"><small>Now</small><svg viewBox="58 243 184 42" aria-label="Current wordmark"><path fill="currentColor" d="__WORD_OLD__"/></svg></div>
+      <div class="wm-row"><small>Refined</small><svg viewBox="-4 -9 574 118" aria-label="Refined wordmark"><path fill="currentColor" d="__WORD_NEW__"/></svg></div>
+    </div>
+    <ul class="list">
+      <li><span><b>The A becomes a &#923;.</b> It drops its crossbar and takes the mark's point, sharpened with 4 units of overshoot so it stands as tall as the flat letters.</span></li>
+      <li><span><b>Spacing by shape.</b> Gaps of <span class="num">9 · 15 · 22 · 30 · 19</span> on a 100 cap: diagonals tuck in, the straight N&#8211;I pair gets the most air.</span></li>
+      <li><span><b>Lighter, so the mark leads.</b> Stems are 15% of the cap height, down from 21%. Rounds run one unit heavier, N's diagonal 8% lighter, and X crosses above centre.</span></li>
+    </ul>
+    <div class="lockups">
+      <div class="panel"><svg id="lockV" viewBox="20 0 260 322" style="width:170px" aria-label="Vertical lockup"></svg></div>
+      <div class="panel" style="gap:28px">
+        <svg id="lockH" viewBox="20 0 980 250" style="width:min(520px,100%)" aria-label="Horizontal lockup"></svg>
+        <svg id="lockH2" viewBox="20 0 980 250" style="width:96px" aria-label="Horizontal lockup at title-bar size"></svg>
+      </div>
+    </div>
+    <p class="note">Vertical lockup: 38 units between point and name, up from 6. Horizontal: the name sits on the arms' axis (y&nbsp;=&nbsp;170), so the right node leads into the A. Smallest: title-bar size.</p>
+  </section>
+
+  <!-- 4 · ICON -->
+  <section class="sec" aria-labelledby="t-icon">
+    <div class="sec__head">
+      <span class="eyebrow">App icon</span>
+      <h2 id="t-icon">A plate that glows from the point</h2>
+      <p class="lede">Same near-black plate and white mark, now weight-centred, with fine grain, a glass edge along the top, and ice-blue light rising from the output point. Under 33px the micro master draws and the grain is left out.</p>
+    </div>
+    <div class="icons">
+      <div class="panel icon-cell"><img alt="Current Axonix icon" src="data:image/png;base64,__ICON_B64__"><p>Now: flat plate, box centred.</p></div>
+      <div class="panel icon-cell"><svg viewBox="0 0 300 300" role="img" aria-label="Refined Axonix icon"><use href="#icon-new"/></svg><p>Refined: weight centred, grain, glass edge, light from the point.</p></div>
+    </div>
+    <div class="taskbars">
+      <div class="taskbar taskbar--dark" id="tbDark"></div>
+      <div class="taskbar taskbar--light" id="tbLight"></div>
+    </div>
+  </section>
+
+  <!-- 5 · ASSISTANT -->
+  <section class="sec" aria-labelledby="t-agent">
+    <div class="sec__head">
+      <span class="eyebrow">The mark is the assistant</span>
+      <h2 id="t-agent">Four states, the same parts</h2>
+      <p class="lede">The mark sits in the Home lockup and in a corner of every module, and it is how the assistant shows what it is doing. A state's loop runs only while that state holds; idle draws nothing, so an idle Axonix stays at zero restyles.</p>
+    </div>
+    <div class="states">
+      <div class="state"><div class="state__stage" data-state="idle"></div><div><b>Idle</b><p>Still. No loop runs.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="listen"></div><div><b>Listening</b><p>The terminals breathe in turn while you type or talk.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="work"></div><div><b>Working</b><p>The signal runs node, body, point: the app's axon pulse, drawn in the mark itself.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="done"></div><div><b>Done</b><p>One fire from the point, then still.</p></div></div>
+    </div>
+  </section>
+
+  <!-- 6 · SYSTEM -->
+  <section class="sec" aria-labelledby="t-system">
+    <div class="sec__head">
+      <span class="eyebrow">The system around it</span>
+      <h2 id="t-system">Monochrome, one ice-blue accent, glass</h2>
+      <p class="lede">These are your answers from today, drawn as tokens. Chrome is black and white. Ice blue marks focus, selection and anything live. Module colours stay only in their backdrop wash and icon.</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#06070a;border-bottom:1px solid var(--hair)"></i><div><b>Ground</b><span>#06070A</span></div></div>
+      <div class="sw"><i style="background:#f7f9fc"></i><div><b>Ink</b><span>#F7F9FC</span></div></div>
+      <div class="sw"><i style="background:#7cc4ff"></i><div><b>Ice · accent</b><span>#7CC4FF</span></div></div>
+      <div class="sw"><i style="background:#5fe0a2"></i><div><b>Positive</b><span>#5FE0A2 + word</span></div></div>
+      <div class="sw"><i style="background:#ff6b6b"></i><div><b>Negative</b><span>#FF6B6B + word</span></div></div>
+    </div>
+    <div class="row">
+      <span class="pill pill--primary">Start focus</span>
+      <span class="pill pill--quiet">Open task</span>
+      <span class="pill pill--quiet ring-demo">Focused control</span>
+      <span class="note">One white pill per view replaces Apple blue. Focus rings are ice.</span>
+    </div>
+    <div class="materials">
+      <div class="materials__bg"></div>
+      <div class="g-grain"></div>
+      <div class="mat glass-thin"><b>Thin glass: cards</b><p>Translucent fill, rim light and grain, with no per-frame blur. The ground behind a card is a still gradient, so blur would add GPU cost without changing how it looks.</p></div>
+      <div class="mat glass-thick"><b>Thick glass: things that float</b><p>Dock, command bar, sheets and menus. These pass over real content, so they blur and refract. The app's quick-liquid engine stays on sheets and selection lenses.</p></div>
+    </div>
+  </section>
+
+  <section class="next" aria-labelledby="t-next">
+    <span class="eyebrow">Next</span>
+    <b id="t-next">Mark anything you want changed. If nothing, phase 1 starts in the app: tokens, the refined mark, the startup zoom and this Home.</b>
+    <p>The plan is in the repo at <code>docs/plan/12 Visual Overhaul Plan.md</code>. The components we take from Designeer's libraries, and why, are in <code>13 Component Sources.md</code>.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const MARK = "__MARK__";
+  const LETTERS = __LETTERS__;
+  const EO = 'cubic-bezier(.16,1,.3,1)';
+  const IO = 'cubic-bezier(.77,0,.175,1)';
+  const NS = 'http://www.w3.org/2000/svg';
+  const NODES = [[150, 30], [50, 170], [250, 170]];
+  const SOMA = [150, 157];
+  const TIP = [150, 240];
+  const WM = { width: 187, left: 56.5, top: 278 };   // splash wordmark, in stage units
+  const ws = WM.width / 565.2;
+
+  const div = (cls, parent, css) => { const d = document.createElement('div'); d.className = cls; if (css) Object.assign(d.style, css); parent.appendChild(d); return d; };
+  const svgLayer = (parent, inner, origin) => {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('viewBox', '0 0 300 320'); s.setAttribute('class', 'layer');
+    s.innerHTML = inner; if (origin) s.style.transformOrigin = origin;
+    parent.appendChild(s); return s;
+  };
+  const dotAt = (cls, parent, [x, y], size) => div('dot ' + cls, parent, { left: (x - size / 2) + 'px', top: (y - size / 2) + 'px', width: size + 'px', height: size + 'px' });
+
+  /** The mark as separate compositor layers: halo, body, nodes, glows, sparks, soma, fire, flare. */
+  function buildMark(host) {
+    const m = {};
+    m.halo = dotAt('halo', host, SOMA, 380);
+    m.body = svgLayer(host, `<path d="${MARK}" fill="#f7f9fc"/>`, `${SOMA[0]}px ${SOMA[1]}px`);
+    m.nodes = NODES.map(([x, y]) => svgLayer(host, `<circle cx="${x}" cy="${y}" r="20" fill="#f7f9fc"/>`, `${x}px ${y}px`));
+    m.glows = NODES.map((p) => dotAt('nglow', host, p, 76));
+    m.sparks = NODES.map((p) => dotAt('spark', host, p, 18));
+    m.soma = dotAt('soma', host, SOMA, 110);
+    m.fire = dotAt('spark', host, SOMA, 20);
+    m.flare = dotAt('flare', host, TIP, 40);
+    [m.halo, m.body, ...m.nodes, ...m.glows, ...m.sparks, m.soma, m.fire, m.flare].forEach((e) => (e.style.opacity = 0));
+    return m;
+  }
+
+  function buildWordmark(host) {
+    return LETTERS.map((l) => {
+      const s = document.createElementNS(NS, 'svg');
+      s.setAttribute('viewBox', `${l.x - 3} -8 ${l.w + 6} 116`);
+      s.setAttribute('class', 'letter');
+      Object.assign(s.style, { left: (WM.left + (l.x - 3) * ws) + 'px', top: (WM.top - 8 * ws) + 'px', width: ((l.w + 6) * ws) + 'px', height: (116 * ws) + 'px', opacity: 0 });
+      s.innerHTML = `<path d="${l.d}" fill="#f7f9fc"/>`;
+      host.appendChild(s);
+      return { el: s, centre: WM.left + (l.x + l.w / 2) * ws };
+    });
+  }
+
+  // ---------- lockups, ladders, icons (static) ----------
+  const markUse = (fill, extra = '') => `<path d="${MARK}" fill="${fill}" ${extra}/>`;
+  const wordPath = LETTERS.map((l) => l.d).join('');
+  const word = (tx, ty, sc, fill) => `<path d="${wordPath}" fill="${fill}" transform="translate(${tx} ${ty}) scale(${sc})"/>`;
+  document.getElementById('lockV').innerHTML = markUse('currentColor') + word(WM.left, WM.top, ws, 'currentColor');
+  const hl = markUse('currentColor') + word(364, 115, 1.1, 'currentColor');
+  document.getElementById('lockH').innerHTML = hl;
+  document.getElementById('lockH2').innerHTML = markUse('currentColor', 'stroke="currentColor" stroke-width="7" stroke-linejoin="round"') + word(364, 115, 1.1, 'currentColor');
+  const mast = document.getElementById('mastLockup');
+  mast.innerHTML = `<svg viewBox="20 0 980 250" aria-hidden="true">${markUse('currentColor', 'stroke="currentColor" stroke-width="7" stroke-linejoin="round"')}${word(364, 115, 1.1, 'currentColor')}</svg>`;
+
+  function ladder(id, ink) {
+    const sizes = [16, 20, 24, 32, 48, 64];
+    const opt = (px) => (px <= 32 ? 7 : px < 96 ? 3 : 0);
+    const cell = (px, stroke) => `<td><svg width="${px}" height="${px}" viewBox="20 0 260 250">${markUse(ink, stroke ? `stroke="${ink}" stroke-width="${stroke}" stroke-linejoin="round"` : '')}</svg></td>`;
+    document.getElementById(id).innerHTML = `<table><thead><tr><th></th>${sizes.map((s) => `<th class="num">${s}px</th>`).join('')}</tr></thead><tbody>
+      <tr><td>Now</td>${sizes.map((s) => cell(s, 0)).join('')}</tr>
+      <tr><td>Optical</td>${sizes.map((s) => cell(s, opt(s))).join('')}</tr></tbody></table>`;
+  }
+  ladder('ladderDark', '#f7f9fc');
+  ladder('ladderLight', '#0d0f12');
+
+  const ICON = document.querySelector('.icon-cell img').getAttribute('src');
+  function taskbar(id, label) {
+    const cells = [24, 32, 48].map((px) => `<div class="pair"><img width="${px}" height="${px}" alt="Current icon at ${px}px" src="${ICON}"><svg width="${px}" height="${px}" viewBox="0 0 300 300" role="img" aria-label="Refined icon at ${px}px"><use href="${px <= 32 ? '#icon-new-micro' : '#icon-new'}"/></svg><span class="num">${px}</span></div>`).join('');
+    document.getElementById(id).innerHTML = `<small>${label}</small>${cells}<span class="note" style="margin-left:auto">Each pair: now, refined</span>`;
+  }
+  taskbar('tbDark', 'Dark bar');
+  taskbar('tbLight', 'Light bar');
+
+  document.getElementById('guides').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+    document.getElementById('centreDemo').classList.toggle('show-guides', on);
+  });
+
+  // ---------- Startup: the pull-back ----------
+  const win = document.getElementById('win');
+  const screen = document.getElementById('screen');
+  const zoom = document.getElementById('zoom');
+  const lkMark = document.getElementById('lkMark');
+  const home = document.getElementById('home');
+  const fields = document.getElementById('fields');
+  const fit = () => screen.style.setProperty('--fit', win.clientWidth / 1040);
+  new ResizeObserver(fit).observe(win); fit();
+
+  // Lockup on the 1040 x 650 screen: mark 58px tall, the name sitting on the arms' axis (y = 170).
+  const MH = 58, u = MH / 230, MW = 240 * u, CAP = MH / 2.09, c = CAP / 100, GAP = 0.85 * CAP;
+  const LW = MW + GAP + 565.2 * c, LX = 520 - LW / 2, LY = 56;
+  Object.assign(lkMark.style, { left: LX + 'px', top: LY + 'px', width: MW + 'px', height: MH + 'px' });
+  const wordLeft = LX + MW + GAP, capTop = LY + 160 * u - CAP / 2;
+  const letters = LETTERS.map((l) => {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('viewBox', `${l.x - 3} -8 ${l.w + 6} 116`);
+    s.setAttribute('class', 'letter');
+    Object.assign(s.style, { left: (wordLeft + (l.x - 3) * c) + 'px', top: (capTop - 8 * c) + 'px', width: ((l.w + 6) * c) + 'px', height: (116 * c) + 'px' });
+    s.innerHTML = `<path d="${l.d}" fill="#f7f9fc"/>`;
+    home.appendChild(s);
+    return s;
+  });
+
+  // One scale about a fixed point Q, chosen so the mark starts with its body centred in the window
+  // and lands exactly on the lockup. The element is laid out at the big size, so it stays sharp.
+  const S0 = (650 * 1.65) / MH;
+  const F = [LX + MW / 2, LY + MH / 2];
+  const C0 = [520, 325 - 32 * u * S0];
+  const Q = [(S0 * F[0] - C0[0]) / (S0 - 1), (S0 * F[1] - C0[1]) / (S0 - 1)];
+  const BW = MW * S0, BH = MH * S0, BL = C0[0] - BW / 2, BT = C0[1] - BH / 2;
+  Object.assign(zoom.style, { left: BL + 'px', top: BT + 'px', width: BW + 'px', height: BH + 'px', transformOrigin: `${Q[0] - BL}px ${Q[1] - BT}px` });
+
+  // Sampled in log space so the zoom speed feels even, eased with the house in-out curve.
+  const bez = (x1, y1, x2, y2) => {
+    const f = (a, b, t) => 3 * a * t * (1 - t) ** 2 + 3 * b * t * t * (1 - t) + t ** 3;
+    return (x) => { let lo = 0, hi = 1, t = x; for (let i = 0; i < 40; i++) { const v = f(x1, x2, t); if (Math.abs(v - x) < 1e-6) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; } return f(y1, y2, t); };
+  };
+  const EIO = bez(0.77, 0, 0.175, 1);
+  const zoomFrames = Array.from({ length: 41 }, (_, i) => ({ offset: i / 40, transform: `scale(${Math.pow(S0, -EIO(i / 40))})` }));
+
+  const HOLD = 140, Z = 1050;
+  const risers = [...home.querySelectorAll('[data-rise]')];
+  let anims = [], rate = 1, playing = false;
+
+  function reset() {
+    anims.forEach((a) => a.cancel()); anims = [];
+    zoom.style.opacity = 1; lkMark.style.opacity = 0; fields.style.opacity = 0;
+    [...letters, ...risers].forEach((e) => (e.style.opacity = 0));
+  }
+  const run = (el, frames, opts) => { const a = el.animate(frames, { fill: 'both', easing: EO, ...opts }); a.playbackRate = rate; anims.push(a); return a; };
+
+  function play() {
+    reset(); playing = true;
+    run(zoom, zoomFrames, { delay: HOLD, duration: Z, easing: 'linear' });
+    run(zoom, [{ opacity: 1 }, { opacity: 0 }], { delay: HOLD + Z, duration: 1, fill: 'forwards' });
+    run(lkMark, [{ opacity: 0 }, { opacity: 1 }], { delay: HOLD + Z, duration: 1 });
+    run(fields, [{ opacity: 0 }, { opacity: 1 }], { delay: HOLD + Z * 0.4, duration: 800 });
+    letters.forEach((l, i) => run(l, [{ opacity: 0, transform: 'translateX(-18px)' }, { opacity: 1, transform: 'none' }], { delay: HOLD + Z * 0.82 + i * 32, duration: 420 }));
+    let card = 0, tile = 0;
+    risers.forEach((r) => {
+      const isTile = r.dataset.rise === 'tile', isCard = r.classList.contains('card');
+      const delay = isTile ? HOLD + Z + 150 + tile++ * 35 : isCard ? HOLD + Z + card++ * 45 : HOLD + Z * 0.9;
+      const from = isTile ? 'translateY(-12px) scale(.9)' : isCard ? 'translateY(-14px) scale(.97)' : 'translateY(-10px)';
+      r.style.transformOrigin = '50% 0';
+      run(r, [{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { delay, duration: 460 });
+    });
+    Promise.all(anims.map((a) => a.finished)).then(() => (playing = false)).catch(() => {});
+  }
+
+  const skip = () => { anims.forEach((a) => { try { a.finish(); } catch (_) {} }); playing = false; };
+  document.getElementById('replay').addEventListener('click', play);
+  document.getElementById('skip').addEventListener('click', skip);
+  document.getElementById('slow').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+    rate = on ? 0.25 : 1; anims.forEach((a) => (a.playbackRate = rate));
+  });
+  window.addEventListener('keydown', (e) => { if (playing && !e.metaKey && !e.ctrlKey && e.key !== 'Tab') skip(); });
+
+  // ---------- assistant states ----------
+  document.querySelectorAll('.state__stage').forEach((box) => {
+    const host = div('mini', box);
+    const place = () => { const k = Math.min(box.clientHeight / 360, box.clientWidth / 320); host.style.transform = `scale(${k}) translate(-150px, -138px)`; };
+    new ResizeObserver(place).observe(box); place();
+    const m = buildMark(host);
+    [m.body, ...m.nodes].forEach((e) => (e.style.opacity = 1));
+    const st = box.dataset.state;
+    const loop = (el, frames, o) => el.animate(frames, { iterations: Infinity, fill: 'both', ...o });
+    if (st === 'listen') {
+      m.halo.style.opacity = .3;
+      m.nodes.forEach((n, i) => loop(n, [{ transform: 'scale(1)' }, { transform: 'scale(1.12)', offset: .4 }, { transform: 'scale(1)' }], { duration: 1800, delay: i * 180, easing: 'ease-in-out' }));
+      m.glows.forEach((g, i) => loop(g, [{ opacity: 0 }, { opacity: .7, offset: .4 }, { opacity: 0 }], { duration: 1800, delay: i * 180, easing: 'ease-in-out' }));
+    }
+    if (st === 'work') {
+      loop(m.halo, [{ opacity: .25 }, { opacity: .5, offset: .5 }, { opacity: .25 }], { duration: 1600, easing: 'ease-in-out' });
+      m.sparks.forEach((s, i) => {
+        const [x, y] = NODES[i];
+        loop(s, [
+          { opacity: 0, transform: 'translate(0,0)' }, { opacity: 1, transform: 'translate(0,0)', offset: .04 },
+          { opacity: 1, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)`, offset: .34 },
+          { opacity: 0, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)`, offset: .38 }, { opacity: 0, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)` },
+        ], { duration: 1600, easing: IO });
+      });
+      loop(m.soma, [{ opacity: 0, transform: 'scale(.5)', offset: 0 }, { opacity: 0, transform: 'scale(.5)', offset: .33 }, { opacity: .9, transform: 'scale(1)', offset: .42 }, { opacity: 0, transform: 'scale(1.4)', offset: .56 }, { opacity: 0 }], { duration: 1600 });
+      loop(m.fire, [{ opacity: 0, transform: 'translate(0,0)', offset: 0 }, { opacity: 0, transform: 'translate(0,0)', offset: .4 }, { opacity: 1, transform: 'translate(0,0)', offset: .44 }, { opacity: 1, transform: `translate(0, ${TIP[1] - SOMA[1]}px)`, offset: .6 }, { opacity: 0, transform: `translate(0, ${TIP[1] - SOMA[1]}px)`, offset: .64 }, { opacity: 0 }], { duration: 1600, easing: 'linear' });
+      loop(m.flare, [{ opacity: 0, transform: 'scale(.25)', offset: 0 }, { opacity: 0, transform: 'scale(.25)', offset: .6 }, { opacity: .9, transform: 'scale(.3)', offset: .62 }, { opacity: 0, transform: 'scale(2.6)', offset: .92 }, { opacity: 0 }], { duration: 1600, easing: 'linear' });
+    }
+    if (st === 'done') {
+      const fire = () => {
+        m.flare.animate([{ opacity: .95, transform: 'scale(.25)' }, { opacity: 0, transform: 'scale(3)' }], { duration: 620, easing: EO, fill: 'both' });
+        m.halo.animate([{ opacity: 0 }, { opacity: .6, offset: .25 }, { opacity: 0 }], { duration: 900, easing: EO, fill: 'both' });
+        m.soma.animate([{ opacity: 0, transform: 'scale(.5)' }, { opacity: .7, transform: 'scale(1)', offset: .3 }, { opacity: 0, transform: 'scale(1.3)' }], { duration: 520, easing: EO, fill: 'both' });
+      };
+      fire(); setInterval(fire, 2600);
+    }
+  });
+
+  reset();
+  const start = () => setTimeout(play, 250);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+})();
+</script>

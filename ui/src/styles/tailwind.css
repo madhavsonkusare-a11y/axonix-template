@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+
+/*
+  Tailwind CONSUMES the Axonix tokens; it does not define a palette.
+
+  `tokens.css` is the single source of truth for the monochrome ramp, density
+  and motion (per `00 Implementation Plan`). Redefining colours here would give
+  us two palettes that drift — and would quietly reintroduce hue into a design
+  that deliberately has none.
+*/
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-sunken: var(--bg-sunken);
+  --color-surface: var(--bg-surface);
+  --color-raised: var(--bg-raised);
+  --color-overlay: var(--bg-overlay);
+
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+
+  --color-fg: var(--text-primary);
+  --color-fg-2: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+  --color-signal: var(--signal);
+  --color-on-signal: var(--on-signal);
+
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-mono);
+
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+
+  --ease-out-axonix: var(--ease-out);
+}

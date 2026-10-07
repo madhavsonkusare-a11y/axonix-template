@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body { width: 420px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="wordmark">AXONIX CLIPPER</span>
+    </header>
+
+    <label for="port">Capture server port</label>
+    <input id="port" type="number" min="1" max="65535" value="8787" />
+
+    <label for="token">Bearer token</label>
+    <input id="token" type="password" placeholder="64 hex characters" />
+    <p class="hint">
+      Printed by <code>axonix-capture</code> on start, and stored at
+      <code>%LOCALAPPDATA%\Axonix\capture-token.txt</code>.
+    </p>
+
+    <button id="save" class="primary">Save</button>
+    <button id="test" style="margin-top: 6px">Test connection</button>
+
+    <p id="status"></p>
+    <script src="options.js"></script>
+  </body>
+</html>

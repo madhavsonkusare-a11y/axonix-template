@@ -1,0 +1,1266 @@
+/* ============================================================
+   AXONIX — launcher + finance tracker surface
+
+   Recreated from `docs/Finance tracker frontend design/
+   design_handoff_axonix_dashboards`. Reads the --fin-* layer in
+   tokens.css; defines no raw colour of its own except the aurora
+   hue stops, which ARE the design and belong nowhere else.
+
+   Conventions carried over from app.css: BEM-ish flat class names,
+   no utility soup, motion only through --dur-* / --ease-out.
+   ============================================================ */
+
+/* ---------- shared: numerals ----------
+   Azeret Mono, with the negative tracking the design applies above 16px.
+   Every figure on these screens goes through one of these. */
+
+.fin-num {
+  font-family: var(--fin-font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.fin-num--sm { letter-spacing: 0; }
+.fin-num--lg { letter-spacing: -0.04em; }
+.fin-num--xl { letter-spacing: -0.045em; }
+
+/* ---------- shared: aurora surface ----------
+   Four stacked layers, in order: wash, dot grid, film grain, content.
+   Geometry and stops are custom properties so the same component serves
+   launcher tiles, wallet cards and the savings panel — each of which
+   shifts the gradient a few percent. */
+
+.fin-aurora {
+  position: relative;
+  overflow: hidden;
+  background: var(--fin-card-base);
+  /* Contains the grain's overlay blend, which would otherwise reach
+     through to whatever sits behind the card. */
+  isolation: isolate;
+  --fin-au-geo: 130% 95% at 50% 124%;
+  --fin-au-s1: 22%;
+  --fin-au-s2: 44%;
+  --fin-au-s3: 70%;
+  --fin-au-dots: 0.42;
+  --fin-au-grain: 0.3;
+}
+
+.fin-aurora__wash,
+.fin-aurora__dots,
+.fin-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fin-aurora__wash {
+  background: radial-gradient(
+    var(--fin-au-geo),
+    rgba(255, 255, 255, var(--fin-au-w)) 0%,
+    var(--fin-au-1) var(--fin-au-s1),
+    var(--fin-au-2) var(--fin-au-s2),
+    var(--fin-au-3) var(--fin-au-s3),
+    transparent 88%
+  );
+}
+
+.fin-aurora__dots {
+  opacity: var(--fin-au-dots);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.5) 1px, transparent 1px);
+  background-size: 6px 6px;
+}
+
+.fin-grain {
+  opacity: var(--fin-au-grain);
+  mix-blend-mode: overlay;
+  background-image: url('../assets/grain.svg');
+}
+
+.fin-aurora__body {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hue stops. `ink` is the dark type colour for the bottom row, which sits
+   on the bright part of the wash — deliberate, and the only place on these
+   screens where type goes dark. */
+.fin-hue-blue {
+  --fin-au-w: 0.9;
+  --fin-au-1: rgba(143, 176, 255, 0.85);
+  --fin-au-2: rgba(91, 140, 255, 0.6);
+  --fin-au-3: rgba(40, 44, 130, 0.3);
+  --fin-au-ink: #0a0f1e;
+}
+/* Stored as `violet` (the Groww card, the Tasks tile), drawn light blue since
+   2026-09-19: the owner wants no purple anywhere. The name stays so saved
+   accounts keep their colour choice without rewriting data. */
+.fin-hue-violet {
+  --fin-au-w: 0.88;
+  --fin-au-1: rgba(168, 220, 255, 0.85);
+  --fin-au-2: rgba(74, 163, 239, 0.6);
+  --fin-au-3: rgba(24, 70, 120, 0.3);
+  --fin-au-ink: #06121f;
+}
+.fin-hue-green {
+  --fin-au-w: 0.9;
+  --fin-au-1: rgba(160, 230, 200, 0.82);
+  --fin-au-2: rgba(95, 224, 162, 0.52);
+  --fin-au-3: rgba(28, 80, 66, 0.3);
+  --fin-au-ink: #0a1c16;
+}
+.fin-hue-amber {
+  --fin-au-w: 0.88;
+  --fin-au-1: rgba(255, 196, 150, 0.82);
+  --fin-au-2: rgba(255, 138, 110, 0.52);
+  --fin-au-3: rgba(120, 50, 45, 0.3);
+  --fin-au-ink: #22100a;
+}
+
+.fin-ink { color: var(--fin-au-ink); }
+
+/* ---------- shared: glass card, pills, labels ---------- */
+
+.fin-card {
+  position: relative;
+  background: var(--fin-card-fill);
+  border: 1px solid var(--fin-card-border);
+  border-radius: var(--fin-r-card);
+  padding: 20px 22px;
+}
+.fin-card--hi {
+  background: var(--fin-card-fill-hi);
+  border-color: var(--fin-card-border-hi);
+  border-radius: var(--fin-r-hero);
+  overflow: hidden;
+  padding: 0;
+}
+.fin-card--tile { border-radius: var(--fin-r-tile); padding: 17px 19px; }
+
+.fin-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.fin-card__head > :last-child { margin-left: auto; }
+.fin-card__title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.014em;
+  color: var(--fin-text-2);
+}
+.fin-card__aside { font-size: 12px; color: var(--fin-text-muted); }
+
+/* Uppercase micro-label. Positive tracking, per the type rules. */
+.fin-label {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(226, 234, 252, 0.44);
+}
+.fin-label--wide { letter-spacing: 0.1em; color: rgba(226, 234, 252, 0.46); }
+.fin-label--sm { font-size: 10.5px; letter-spacing: 0.08em; color: rgba(226, 234, 252, 0.4); }
+
+/* Every button, chip, badge and bar in this design is a 980px pill. */
+.fin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 15px;
+  border-radius: var(--fin-r-pill);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: rgba(235, 240, 250, 0.78);
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+button.fin-pill { cursor: pointer; }
+button.fin-pill:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* The ONE filled button. Apple blue, used for the primary action only. */
+.fin-pill--action {
+  background: var(--fin-action);
+  border-color: transparent;
+  color: var(--fin-action-ink);
+  padding: 0 17px;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+}
+.fin-pill--action:hover { background: #0a7cf0; }
+
+.fin-pill--outline {
+  background: none;
+  border-color: var(--fin-accent);
+  color: var(--fin-accent-text);
+  padding: 0 16px;
+}
+.fin-pill--outline:hover { background: rgba(91, 140, 255, 0.1); }
+
+.fin-pill--light {
+  height: 30px;
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: transparent;
+  color: var(--fin-bg);
+  font-size: 12.5px;
+}
+.fin-pill--light:hover { background: #fff; }
+
+/* Small status chips. */
+.fin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: var(--fin-r-pill);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.fin-chip--up {
+  background: rgba(61, 214, 140, 0.13);
+  border: 1px solid rgba(61, 214, 140, 0.26);
+  color: var(--fin-positive);
+}
+.fin-chip--accent {
+  padding: 4px 11px;
+  background: rgba(91, 140, 255, 0.14);
+  border: 1px solid rgba(91, 140, 255, 0.28);
+  color: var(--fin-accent-text);
+  font-size: 11.5px;
+}
+button.fin-chip { cursor: pointer; }
+
+/* Keyboard cap. */
+.fin-key {
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--fin-font-num);
+  font-size: 10.5px;
+  font-weight: var(--fw-medium);
+  color: rgba(226, 234, 252, 0.55);
+}
+
+/* Progress / budget bar. */
+.fin-bar {
+  height: 6px;
+  border-radius: var(--fin-r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.fin-bar--thin { height: 5px; }
+.fin-bar--thick { height: 7px; }
+.fin-bar__fill {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--fin-r-pill);
+  background: linear-gradient(90deg, var(--fin-accent), var(--fin-accent-2));
+  transition: clip-path var(--dur-base) var(--ease-out);
+}
+.fin-bar__fill--over { background: linear-gradient(90deg, #ff8f8f, var(--fin-negative)); }
+
+.fin-positive { color: var(--fin-positive); }
+.fin-negative { color: var(--fin-negative-text); }
+
+/* Green dot + text, used by both sync indicators. */
+.fin-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fin-positive);
+  flex: none;
+}
+
+/* ============================================================
+   1. AXONIX HOME — the launcher
+   ============================================================ */
+
+.home {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--fin-bg);
+  color: var(--fin-text);
+  font-family: var(--fin-font-ui);
+}
+
+.home__inner {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Three washes: blue overhead, light blue bottom-left, a whisper of green right. */
+.home__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(140% 110% at 50% 20%, #000 35%, rgba(0, 0, 0, 0.6) 70%, transparent 100%);
+  mask-image: radial-gradient(140% 110% at 50% 20%, #000 35%, rgba(0, 0, 0, 0.6) 70%, transparent 100%);
+  background:
+    radial-gradient(900px 520px at 50% -14%, rgba(91, 140, 255, 0.26), transparent 62%),
+    radial-gradient(700px 460px at 12% 108%, rgba(124, 196, 255, 0.16), transparent 66%),
+    radial-gradient(680px 420px at 92% 96%, rgba(95, 224, 162, 0.09), transparent 70%);
+}
+.home__grain { opacity: 0.28; }
+
+.home__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 34px;
+}
+.home__mark { width: 22px; height: 22px; display: block; flex: none; color: #f2f4f8; }
+.home__wordmark {
+  font-size: 11.5px;
+  font-weight: var(--fw-semi);
+  line-height: 1;
+  letter-spacing: 0.18em;
+  color: rgba(242, 244, 248, 0.82);
+}
+.home__meta { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+.home__clock {
+  font-family: var(--fin-font-num);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(226, 234, 252, 0.44);
+}
+.home__sync { height: 30px; padding: 0 13px; font-size: 12px; color: rgba(235, 240, 250, 0.66); }
+.home__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #7aa4ff, var(--fin-accent-2));
+  display: block;
+  flex: none;
+}
+
+.home__center {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 76px;
+  padding: 80px 40px 70px;
+}
+
+.home__greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 96px;
+}
+.home__logo { width: 56px; height: 56px; color: var(--fin-text-2); opacity: 0.8; }
+.home__greeting h1 {
+  margin: 0;
+  font-size: 52px;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  color: var(--fin-text);
+  text-align: center;
+  transition:
+    opacity 520ms var(--ease-out),
+    transform 520ms var(--ease-out);
+}
+.home__greeting h1[data-fading='true'] { opacity: 0; transform: translateY(-8px); }
+
+.home__dots { display: flex; gap: 6px; }
+.home__dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(242, 244, 248, 0.2);
+  transition: background var(--dur-slow) ease;
+}
+.home__dots span[data-on='true'] { background: rgba(242, 244, 248, 0.85); }
+
+/* 4-up on a wide window, 2x2 below — never 3+1. auto-fit could not honour
+   that: inside the 1144px cap it produced three columns and an orphan. */
+.home__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1144px;
+  margin: 0 auto;
+}
+@media (min-width: 1272px) {
+  .home__tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.home__jump {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--fin-r-pill);
+  font-size: 12.5px;
+  color: rgba(226, 234, 252, 0.46);
+  cursor: pointer;
+}
+.home__jump:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* ---------- app tile ---------- */
+
+.tile-app {
+  height: 260px;
+  border-radius: var(--fin-r-hero);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+.tile-app[data-ready='true'] { cursor: pointer; }
+.tile-app[data-ready='true']:active { transform: scale(0.985); }
+@media (hover: hover) and (pointer: fine) {
+.tile-app[data-ready='true']:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+}
+.tile-app[data-ready='false'] { cursor: default; }
+.tile-app:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.tile-app .fin-aurora__body { padding: 20px 22px; }
+
+.tile-app__glyph {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--fin-r-glyph);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.75);
+  flex: none;
+}
+.tile-app__title {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  letter-spacing: -0.016em;
+  color: #fff;
+}
+.tile-app__sub {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.62);
+}
+.tile-app__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.tile-app__figure { font-size: 19px; font-weight: var(--fw-medium); line-height: 1; }
+.tile-app__secondary { margin-left: auto; font-size: 12px; line-height: 1; letter-spacing: 0; }
+
+/* ============================================================
+   2. FINANCE TRACKER — shell (rail + content)
+   ============================================================ */
+
+.fin {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  height: 100%;
+  min-height: 0;
+  background: var(--fin-bg);
+  color: var(--fin-text);
+  font-family: var(--fin-font-ui);
+}
+
+/* ---------- nav rail ---------- */
+
+.fin-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 24px 16px 20px;
+  background: var(--fin-bg-rail);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.fin-rail__grain { opacity: 0.22; }
+
+.fin-rail__brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.fin-rail__brand svg { width: 22px; height: 22px; display: block; flex: none; color: #f2f4f8; }
+.fin-rail__brand span {
+  font-size: 12px;
+  font-weight: var(--fw-semi);
+  line-height: 1;
+  letter-spacing: 0.16em;
+  color: rgba(242, 244, 248, 0.9);
+}
+.fin-rail__brand:hover span { color: #fff; }
+.fin-rail__brand:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--r-sm); }
+
+.fin-rail__nav { position: relative; display: flex; flex-direction: column; gap: 3px; }
+.fin-rail__section {
+  padding: 0 8px 8px;
+  font-size: 10.5px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 234, 252, 0.34);
+}
+
+.fin-nav {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 38px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(235, 240, 250, 0.72);
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.fin-nav:hover { background: rgba(255, 255, 255, 0.04); color: var(--fin-text-3); }
+/* The highlight itself is the rail's liquid lens; the row only changes ink. */
+.fin-nav { position: relative; }
+.fin-nav--on,
+.fin-nav--on:hover {
+  background: transparent;
+  color: #f4f6fa;
+  font-weight: var(--fw-medium);
+}
+.fin-nav:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fin-nav__glyph { flex: none; display: grid; place-items: center; width: 15px; height: 15px; }
+.fin-nav__count {
+  margin-left: auto;
+  font-family: var(--fin-font-num);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  color: rgba(226, 234, 252, 0.36);
+}
+.fin-nav__badge {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: var(--fin-r-pill);
+  background: var(--fin-accent);
+  font-family: var(--fin-font-num);
+  font-size: 10.5px;
+  font-weight: var(--fw-medium);
+  color: #07111f;
+}
+
+.fin-rail__foot {
+  position: relative;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 11px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.fin-rail__sync {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--fin-text-muted);
+}
+.fin-rail__user { display: flex; align-items: center; gap: 9px; }
+.fin-rail__user span:nth-child(2) { font-size: 12.5px; color: rgba(235, 240, 250, 0.72); }
+.fin-rail__user span:last-child { margin-left: auto; font-size: 13px; color: rgba(226, 234, 252, 0.4); }
+.fin-rail__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #7aa4ff, var(--fin-accent-2));
+  flex: none;
+}
+
+/* ---------- content column ---------- */
+
+.fin-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.fin-main__grain { opacity: 0.24; position: absolute; inset: 0; }
+.fin-main__scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; }
+
+.fin-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 140px 12px 32px;
+  border-bottom: 1px solid var(--fin-hairline);
+  flex: none;
+}
+.fin-topbar__right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.fin-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 15px;
+  min-width: 260px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--fin-r-pill);
+  color: rgba(226, 234, 252, 0.44);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.fin-search:hover { background: rgba(255, 255, 255, 0.08); }
+.fin-search__key { margin-left: auto; color: rgba(226, 234, 252, 0.34); }
+
+/* Segmented control — every one in the tracker. The selected state is the
+   liquid lens (`.fin-lens`) sliding underneath, so the buttons themselves
+   only change ink. */
+.fin-seg {
+  position: relative;
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--fin-r-pill);
+}
+.fin-seg button {
+  position: relative;
+  padding: 6px 13px;
+  border: 0;
+  border-radius: var(--fin-r-pill);
+  background: none;
+  font-family: var(--fin-font-num);
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  color: var(--fin-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.fin-seg button:hover { color: var(--fin-text-3); }
+.fin-seg button[aria-checked='true'] { color: #f4f6fa; }
+.fin-seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fin-seg--lg button { padding: 7px 15px; }
+.fin-seg--text button { font-family: var(--fin-font-ui); font-size: 12.5px; letter-spacing: -0.005em; padding: 7px 14px; }
+
+/* ============================================================
+   3. OVERVIEW frame
+   ============================================================ */
+
+.fin-body {
+  position: relative;
+  padding: 28px 32px 32px;
+  display: grid;
+  grid-template-columns: 1fr 372px;
+  gap: 22px;
+  align-items: start;
+}
+.fin-body__left { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.fin-body__right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+/* ---------- hero band ---------- */
+
+.fin-hero__top {
+  position: relative;
+  padding: 24px 26px 0;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px 32px;
+}
+.fin-hero__lead { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.fin-hero__figure { display: flex; align-items: flex-end; gap: 13px; }
+.fin-hero__amount { font-size: 42px; font-weight: var(--fw-medium); line-height: 1; color: #fbfcfe; }
+.fin-hero__delta { margin-bottom: 7px; font-weight: var(--fw-medium); }
+.fin-hero__sub {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--fin-text-muted);
+}
+
+/* Azeret's numerals are wide — 16px here is a measured value, not a default. */
+.fin-hero__stats { display: flex; gap: 18px; min-width: 0; padding-top: 2px; }
+.fin-hero__stat { display: flex; flex-direction: column; gap: 6px; }
+.fin-hero__stat span:last-child { font-size: 16px; color: var(--fin-text-2); }
+.fin-hero__rule { width: 1px; background: rgba(255, 255, 255, 0.08); }
+
+.fin-hero__chart { display: block; width: 100%; height: 196px; margin-top: 2px; }
+.fin-hero__ticks {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 26px 16px;
+  font-family: var(--fin-font-num);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: rgba(226, 234, 252, 0.32);
+}
+
+/* ---------- stat row ---------- */
+
+.fin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.fin-stat__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 11px;
+}
+.fin-stat__value { font-size: 21px; line-height: 1; color: #f4f6fa; letter-spacing: -0.035em; }
+.fin-stat__note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.3; color: rgba(226, 234, 252, 0.44); }
+.fin-stat__aside { font-size: 12px; color: rgba(226, 234, 252, 0.44); }
+.fin-spark { display: block; flex: none; }
+
+/* ---------- spending donut + budgets ---------- */
+
+.fin-split { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
+
+.fin-donut { display: flex; align-items: center; gap: 26px; }
+.fin-donut svg { display: block; flex: none; transform: rotate(-90deg); }
+.fin-donut__legend { flex: 1; display: flex; flex-direction: column; gap: 13px; min-width: 0; }
+.fin-donut__row { display: flex; align-items: center; gap: 11px; font-size: 13px; padding: 0; border: 0; background: none; font-family: inherit; color: inherit; text-align: left; cursor: pointer; }
+.fin-donut__row:hover span:nth-child(2) { color: #fff; }
+.fin-donut__row span:nth-child(2) { color: var(--fin-text-3); }
+.fin-donut__row span:last-child { margin-left: auto; color: var(--fin-text-2); }
+.fin-swatch { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+.fin-budgets { display: flex; flex-direction: column; gap: 15px; }
+.fin-budget { display: flex; flex-direction: column; gap: 7px; }
+.fin-budget__head { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.fin-budget__head span:first-child { color: rgba(235, 240, 250, 0.82); }
+.fin-budget__head span:last-child { margin-left: auto; font-size: 12px; color: rgba(226, 234, 252, 0.6); }
+
+/* ---------- recent activity ---------- */
+
+.fin-activity { padding-bottom: 8px; }
+.fin-activity__head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; min-height: 26px; }
+.fin-activity__head .fin-card__title { margin-right: 0; }
+.fin-activity__see {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: rgba(226, 234, 252, 0.44);
+  cursor: pointer;
+}
+.fin-activity__see:hover { color: var(--fin-text-3); }
+
+.fin-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 150px 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  color: var(--fin-text-3);
+}
+.fin-row--head {
+  padding: 11px 0;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fin-text-faint);
+}
+.fin-row:last-of-type { border-bottom: 0; }
+.fin-row__date { font-size: 11.5px; color: var(--fin-text-muted); letter-spacing: 0; }
+.fin-row__cat { display: flex; align-items: center; gap: 7px; color: rgba(226, 234, 252, 0.58); }
+.fin-row__amount { text-align: right; font-size: 13px; color: var(--fin-text-2); letter-spacing: 0; }
+
+/* Invariant #3: anything an agent assigned lands unverified. This dashed chip
+   is the visual hook for that state — same dashed language as .badge--unverified. */
+.fin-auto {
+  padding: 2px 7px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: rgba(226, 234, 252, 0.45);
+}
+
+.fin-quickadd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 0 15px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: rgba(226, 234, 252, 0.44);
+  text-align: left;
+  cursor: pointer;
+}
+.fin-quickadd:hover { color: var(--fin-text-3); }
+.fin-quickadd__plus {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(91, 140, 255, 0.18);
+  border: 1px solid rgba(91, 140, 255, 0.3);
+  font-size: 14px;
+  color: var(--fin-accent-text);
+  flex: none;
+}
+.fin-quickadd .fin-key { margin-left: auto; }
+
+/* ---------- wallet stack (right column) ---------- */
+
+.fin-wallet__head { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+.fin-wallet__count { font-family: var(--fin-font-num); font-size: 11px; color: rgba(226, 234, 252, 0.4); }
+.fin-wallet__head .fin-pill { margin-left: auto; }
+
+/* Same gap as the column, so wrapping the heading and stack changes no spacing. */
+.fin-wallet__zone { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.fin-wallet { position: relative; height: 286px; }
+
+/* Two ghost cards behind, insetting and rising as they recede. */
+.fin-wallet__ghost {
+  position: absolute;
+  height: 130px;
+  border-radius: var(--fin-r-hero);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045));
+  border: 1px solid rgba(255, 255, 255, 0.13);
+}
+.fin-wallet__ghost--back { top: 0; left: 22px; right: 22px; }
+.fin-wallet__ghost--mid {
+  top: 20px;
+  left: 11px;
+  right: 11px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.055));
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* The one element on these screens that genuinely floats, so the one shadow. */
+.fin-wallet__front {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  right: 0;
+  height: 230px;
+  border-radius: var(--fin-r-frame);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.95);
+  --fin-au-geo: 120% 90% at 50% 118%;
+  --fin-au-s2: 42%;
+  --fin-au-s3: 66%;
+  --fin-au-dots: 0.5;
+}
+.fin-wallet__front .fin-aurora__body { padding: 20px 22px; }
+
+.fin-wallet__dots {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  height: 14px;
+}
+/* 4px of dot, in a 12×14 target a pointer can actually hit. */
+.fin-wallet__dots button {
+  box-sizing: content-box;
+  width: 4px;
+  height: 4px;
+  padding: 5px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+  cursor: pointer;
+  transition: width var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out);
+}
+.fin-wallet__dots button:hover { background-color: rgba(255, 255, 255, 0.55); }
+.fin-wallet__dots button[aria-current='true'] { width: 16px; background-color: rgba(255, 255, 255, 0.85); }
+.fin-wallet__dots button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ---------- account card (wallet front + Accounts frame) ---------- */
+
+.fin-acct__top { display: flex; align-items: flex-start; gap: 10px; }
+.fin-acct__id { display: flex; flex-direction: column; gap: 6px; }
+.fin-acct__name {
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+.fin-acct__balance { font-size: 30px; font-weight: var(--fw-medium); line-height: 1; color: #fff; }
+.fin-acct__tail {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  font-family: var(--fin-font-num);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.fin-acct__foot { margin-top: auto; display: flex; align-items: flex-end; gap: 18px; }
+.fin-acct__flow { display: flex; flex-direction: column; gap: 5px; }
+.fin-acct__flow span:first-child { font-size: 11px; line-height: 1; }
+.fin-acct__flow span:last-child { font-size: 14px; font-weight: var(--fw-medium); line-height: 1; }
+.fin-acct__foot svg { display: block; margin-left: auto; }
+
+/* Two shapes, so a bank card never reads as an account and vice versa:
+   physical cards (debit, credit, forex) are 360px at the ISO card ratio;
+   accounts without a card (demat, PPF, gold) are squares as tall as a card (227px), so rows line up. Fixed tracks,
+   never `1fr`, which stretched a lone card across the remaining width. */
+.fin-accounts__layout { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.fin-accounts__stack { display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; width: min(360px, 100%); }
+.fin-accounts__layout .fin-accounts__grid {
+  flex: 1;
+  min-width: min(227px, 100%);
+  align-items: start;
+  grid-template-columns: repeat(auto-fill, min(227px, 100%));
+  gap: 24px;
+}
+.fin-accounts__stack > * { width: 100%; max-width: 100%; }
+
+/* Accounts frame variant: slightly smaller figure, tighter foot. */
+.fin-acct--grid { border-radius: var(--fin-r-hero); border: 1px solid rgba(255, 255, 255, 0.16); --fin-au-geo: 130% 95% at 50% 120%; --fin-au-s1: 24%; --fin-au-s2: 46%; --fin-au-dots: 0.45; --fin-au-grain: 0.28; }
+.fin-acct--grid.fin-acct--physical { aspect-ratio: 1.586 / 1; height: auto; }
+.fin-acct--grid.fin-acct--digital { aspect-ratio: 1 / 1; height: auto; --fin-au-geo: 150% 110% at 50% 118%; }
+/* The square is narrower than a card: a smaller figure, and the foot wraps so
+   the flows sit above the action instead of squeezing beside it. */
+.fin-acct--grid.fin-acct--digital .fin-aurora__body { padding: 18px 18px 16px; }
+.fin-acct--grid.fin-acct--digital .fin-acct__balance { font-size: 22px; }
+.fin-acct--grid.fin-acct--digital .fin-acct__id { min-width: 0; }
+.fin-acct--grid.fin-acct--digital .fin-acct__foot { flex-wrap: wrap; row-gap: 10px; }
+.fin-acct--grid.fin-acct--digital .fin-acct__action { margin-left: 0; }
+.fin-acct--grid .fin-aurora__body { padding: 20px 22px; }
+.fin-acct--grid .fin-acct__balance { font-size: 27px; }
+.fin-acct--grid .fin-acct__tail { font-size: 10.5px; letter-spacing: 0; color: rgba(255, 255, 255, 0.68); }
+.fin-acct--grid .fin-acct__foot { gap: 14px; }
+.fin-acct--grid .fin-acct__flow { gap: 4px; }
+.fin-acct--grid .fin-acct__flow span:first-child { font-size: 10.5px; }
+.fin-acct--grid .fin-acct__flow span:last-child { font-size: 13px; }
+
+/* Dark pill on the bright band — the credit card's one action. */
+.fin-acct__action {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--fin-r-pill);
+  background: rgba(20, 8, 6, 0.82);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.fin-acct__action:hover { background: rgba(20, 8, 6, 0.95); }
+
+/* ---------- subscriptions + forecast ---------- */
+
+.fin-list { display: flex; flex-direction: column; gap: 12px; }
+.fin-list__row { display: flex; align-items: center; gap: 10px; }
+.fin-list__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--fin-r-glyph);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+.fin-list__icon--accent { background: rgba(91, 140, 255, 0.2); border-color: rgba(91, 140, 255, 0.3); }
+.fin-list__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fin-list__text span:first-child { font-size: 13px; line-height: 1.2; color: rgba(235, 240, 250, 0.86); }
+.fin-list__text span:last-child { font-family: var(--fin-font-num); font-size: 11px; line-height: 1.2; color: rgba(226, 234, 252, 0.4); }
+.fin-list__amount { margin-left: auto; font-size: 13px; color: var(--fin-text-2); letter-spacing: 0; }
+
+.fin-forecast {
+  position: relative;
+  border: 1px solid rgba(91, 140, 255, 0.22);
+  border-radius: var(--fin-r-card);
+  padding: 18px 20px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(91, 140, 255, 0.14), rgba(124, 196, 255, 0.05));
+  isolation: isolate;
+}
+.fin-forecast__grain { opacity: 0.26; }
+.fin-forecast__inner { position: relative; }
+.fin-forecast__amount { font-size: 26px; font-weight: var(--fw-medium); line-height: 1; color: #f4f6fa; }
+.fin-forecast__note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: rgba(235, 240, 250, 0.66); }
+.fin-forecast svg { display: block; margin-top: 10px; width: 100%; height: 50px; }
+
+/* ============================================================
+   4. ACCOUNTS & CARDS frame  ·  5. SPENDING frame  ·  stubs
+   ============================================================ */
+
+.fin-page { position: relative; padding: 30px 36px 36px; display: flex; flex-direction: column; gap: 26px; }
+.fin-page--tight { gap: 24px; }
+
+.fin-page__head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.fin-page__lead { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.fin-page__lead h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: var(--fw-semi);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  color: var(--fin-text);
+}
+.fin-page__lead p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--fin-text-muted);
+}
+.fin-page__actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.fin-accounts__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: 18px; }
+
+.fin-accounts__list {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018));
+  border: 1px solid var(--fin-card-border);
+  border-radius: var(--fin-r-card);
+  padding: 8px 22px 10px;
+}
+.fin-arow {
+  display: grid;
+  grid-template-columns: 1fr 180px 150px 120px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.fin-arow--head {
+  padding: 14px 0 12px;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fin-text-faint);
+}
+.fin-arow__name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fin-arow__name span:last-child {
+  font-size: 13.5px;
+  letter-spacing: -0.012em;
+  color: rgba(235, 240, 250, 0.88);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fin-arow__badge {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-family: var(--fin-font-num);
+  font-size: 10.5px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  color: rgba(235, 240, 250, 0.72);
+  flex: none;
+}
+.fin-arow__badge--add { background: none; border: 1px dashed rgba(255, 255, 255, 0.2); font-family: var(--fin-font-ui); font-size: 14px; color: var(--fin-text-muted); }
+.fin-arow__kind { font-size: 13px; color: rgba(226, 234, 252, 0.58); }
+.fin-arow__synced { font-family: var(--fin-font-num); font-size: 12px; color: rgba(226, 234, 252, 0.44); }
+.fin-arow__balance { text-align: right; font-size: 13.5px; color: var(--fin-text-2); letter-spacing: 0; }
+
+.fin-arow--add {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 0 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: rgba(226, 234, 252, 0.46);
+  text-align: left;
+  cursor: pointer;
+}
+.fin-arow--add:hover { color: var(--fin-text-3); }
+
+/* ---------- spending ---------- */
+
+.fin-spend__split { display: grid; grid-template-columns: 1fr 400px; gap: 16px; align-items: start; }
+.fin-spend__legend { margin-left: auto; display: flex; gap: 14px; font-size: 11.5px; color: rgba(226, 234, 252, 0.48); }
+.fin-spend__legend span { display: flex; align-items: center; gap: 6px; }
+.fin-spend__chart { display: block; width: 100%; height: 220px; }
+.fin-spend__trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.fin-spend__day { display: block; width: 100%; height: 150px; }
+
+.fin-saved {
+  /* Flex, because this is the one aurora card sized by min-height rather than
+     height — and `.fin-aurora__body { height: 100% }` cannot resolve against an
+     auto-height parent, which would strand the emergency-fund row mid-card. */
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--fin-r-hero);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  min-height: 286px;
+  --fin-au-geo: 130% 90% at 50% 122%;
+  --fin-au-s3: 68%;
+  --fin-au-dots: 0.45;
+}
+.fin-saved .fin-aurora__body { flex: 1; padding: 22px 24px; gap: 16px; }
+.fin-saved__top { display: flex; align-items: flex-start; }
+.fin-saved__id { display: flex; flex-direction: column; gap: 7px; }
+.fin-saved__label {
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.74);
+}
+.fin-saved__amount { font-size: 34px; font-weight: var(--fw-medium); line-height: 1; color: #fff; }
+.fin-saved__rate {
+  margin-left: auto;
+  padding: 5px 11px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: var(--fin-r-pill);
+  font-family: var(--fin-font-num);
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: #fff;
+}
+.fin-saved__note { margin: 0; max-width: 300px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); }
+.fin-saved__fund { margin-top: auto; display: flex; align-items: flex-end; gap: 8px; }
+.fin-saved__fund > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.fin-saved__fund .fin-bar { background: rgba(8, 28, 22, 0.28); }
+.fin-saved__fund .fin-bar__fill { background: rgba(8, 28, 22, 0.75); }
+.fin-saved__fund > span { font-size: 13px; font-weight: var(--fw-medium); line-height: 1; }
+
+/* ---------- undesigned frames ---------- */
+
+.fin-stub {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 420px;
+  padding: 60px 32px;
+  text-align: center;
+}
+.fin-stub__glyph {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1.5px dashed rgba(226, 234, 252, 0.28);
+  margin-bottom: 6px;
+}
+.fin-stub h2 { margin: 0; font-size: 17px; font-weight: var(--fw-medium); letter-spacing: -0.016em; color: var(--fin-text-2); }
+.fin-stub p { margin: 0; max-width: 42ch; font-size: 13px; line-height: 1.55; color: var(--fin-text-muted); }
+
+/* ============================================================
+   RESPONSIVE
+   These frames are desktop-window designs at 1440px. Order of
+   collapse is deliberate: the right column goes first, the rail
+   last — losing navigation hurts more than losing the wallet.
+   ============================================================ */
+
+@media (max-width: 1100px) {
+  .fin-body { grid-template-columns: minmax(0, 1fr); }
+  .fin-spend__split { grid-template-columns: minmax(0, 1fr); }
+  .fin-accounts__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fin-spend__trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .fin { grid-template-columns: 64px 1fr; }
+  .fin-rail { padding: 24px 10px 20px; align-items: center; }
+  .fin-rail__brand span,
+  .fin-rail__section,
+  .fin-nav span:not(.fin-nav__glyph):not(.fin-nav__badge):not(.fin-nav__count),
+  .fin-rail__foot { display: none; }
+  .fin-nav { justify-content: center; padding: 0; }
+  .fin-nav__count, .fin-nav__badge { display: none; }
+
+  .fin-split { grid-template-columns: minmax(0, 1fr); }
+  .fin-stats { grid-template-columns: minmax(0, 1fr); }
+  .fin-accounts__grid,
+  .fin-spend__trio { grid-template-columns: minmax(0, 1fr); }
+  .fin-body, .fin-page { padding-left: 20px; padding-right: 20px; }
+  .fin-topbar { padding-left: 20px; padding-right: 20px; flex-wrap: wrap; }
+
+  /* Azeret at 42px overflows a narrow column before anything else does. */
+  .fin-hero__amount { font-size: 32px; }
+  .fin-page__lead h2 { font-size: 24px; }
+
+  /* The list drops its two middle columns rather than scrolling sideways. */
+  .fin-arow, .fin-arow--head { grid-template-columns: 1fr 110px; }
+  .fin-arow__kind, .fin-arow__synced,
+  .fin-arow--head span:nth-child(2), .fin-arow--head span:nth-child(3) { display: none; }
+  .fin-row, .fin-row--head { grid-template-columns: 64px 1fr 110px; }
+  .fin-row__cat, .fin-row--head span:nth-child(3) { display: none; }
+}
+

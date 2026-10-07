@@ -1,0 +1,5 @@
+# pnpm 11 reads build-script approval from here, not package.json.
+# esbuild's postinstall downloads its platform binary — required for it to run
+# at all. Approved explicitly so no other dependency gets to run install scripts.
+allowBuilds:
+  esbuild: true

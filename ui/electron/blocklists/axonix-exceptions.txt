@@ -1,0 +1,9 @@
+! Axonix: requests the tracker blocker must let through, whatever EasyPrivacy says.
+! A site's own security and anti-fraud checks: blocking one can make the site
+! ask for verification at every sign-in, or lock the account.
+!
+! LinkedIn's device sensor (EasyPrivacy lists it as tracking).
+@@||linkedin.com/sensorCollect^
+! Akamai Bot Manager sensor posts and challenges, used by several sites.
+@@/akam/$xmlhttprequest,script
+@@/_sec/cp_challenge/

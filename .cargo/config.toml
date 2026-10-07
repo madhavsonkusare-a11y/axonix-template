@@ -1,0 +1,5 @@
+# Keep Axonix build output in the shared projects build directory.
+# This setting is local to this Cargo workspace; other projects use their own targets.
+
+[build]
+target-dir = "D:/06 Projects/_build/cargo-target/axonix"

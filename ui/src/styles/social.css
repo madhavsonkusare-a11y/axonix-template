@@ -1,0 +1,811 @@
+/* ============================================================
+   AXONIX SOCIAL
+   macOS 27 layout on the finance surface's tokens (--fin-*):
+   a Liquid Glass dock on the left edge, the page as a rounded window card,
+   the title bar's controls in one glass capsule.
+
+   Glass follows DESIGN.md §6: refraction (quick-liquid) on the dock only;
+   bubbles, menus and the panel use a standard material (blur + tint).
+   Social's hue is amber, as on its Home tile.
+   ============================================================ */
+
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--fin-bg);
+  color: var(--fin-text);
+  font-family: var(--fin-font-ui);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+button { font: inherit; color: inherit; cursor: default; }
+button:focus-visible { outline: 2px solid var(--fin-accent-text); outline-offset: 2px; }
+
+.soc { position: fixed; inset: 0; overflow: hidden; }
+
+.soc__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('../assets/grain.svg');
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+}
+
+/* ---------- title bar ---------- */
+
+.soc-titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Left edge lines up with the page card; the right leaves room for Windows' caption buttons. */
+  padding: 0 152px 0 88px;
+  -webkit-app-region: drag;
+  z-index: 3;
+}
+.soc-titlebar button { -webkit-app-region: no-drag; }
+
+.soc-nav {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 3px;
+  border-radius: var(--fin-r-pill);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-app-region: no-drag;
+}
+.soc-nav button {
+  width: 28px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--fin-r-pill);
+  background: transparent;
+  color: var(--fin-text-3);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+.soc-nav button:active:not(:disabled) { transform: scale(0.94); }
+.soc-nav button:disabled { color: rgba(226, 234, 252, 0.26); }
+@media (hover: hover) and (pointer: fine) {
+  .soc-nav button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: var(--fin-text); }
+}
+.soc-nav__sep { width: 1px; height: 14px; margin: 0 2px; background: rgba(255, 255, 255, 0.1); }
+
+.soc-titlebar__title {
+  position: relative;
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--fin-text-2);
+  white-space: nowrap;
+}
+.soc-titlebar__end { margin-left: auto; display: flex; align-items: center; }
+
+/* ---------- dock ---------- */
+
+.soc-dock {
+  position: absolute;
+  left: 10px;
+  top: 44px;
+  bottom: 12px;
+  width: 64px;
+  display: flex;
+  align-items: center;
+  z-index: 4;
+  pointer-events: none;
+}
+.soc-dock__shelf { position: relative; width: 64px; pointer-events: auto; }
+.soc-dock__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  /* One uninterrupted material: the liquid engine's content layer created an
+     unwanted dark rectangle inside the dock. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  backdrop-filter: blur(22px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 48px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.soc-dock__column {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+}
+
+.soc-dock__app {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+.soc-dock__app:focus-visible .soc-icon { box-shadow: 0 0 0 2px var(--fin-bg), 0 0 0 4px var(--fin-accent-text); }
+/* The dock icon stays painted while its launch copy leaves. Hiding it in the
+   same React commit that mounts the copy produced a blank/glitch frame while
+   Chromium attached the guest page. Keeping the source also matches a real
+   launcher: the app comes from the icon without removing its home in the dock. */
+
+/* The tile's radius is the only corner an icon has (DESIGN.md §10). */
+.soc-icon {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 23%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.34);
+}
+.soc-icon img { display: block; width: 100%; height: 100%; transform: scale(1.08); pointer-events: none; }
+/* Dark icons (X, Threads) need an edge against a dark dock. */
+.soc-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.soc-dock__state {
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  width: 3px;
+  height: 12px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: rgba(226, 234, 252, 0.38);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.24);
+  transition: height var(--dur-press) var(--ease-out), background-color var(--dur-press) ease, box-shadow var(--dur-press) ease;
+}
+.soc-dock__state[data-state='active'] { height: 24px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 0 8px rgba(255, 255, 255, 0.28); }
+.soc-dock__state[data-state='sleeping'] { width: 5px; height: 5px; background: transparent; border: 1px solid rgba(226, 234, 252, 0.42); box-shadow: none; }
+
+.soc-badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: var(--fin-r-pill);
+  background: #ff453a;
+  color: #fff;
+  font: 600 11px/18px var(--fin-font-ui);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  box-shadow: 0 0 0 2px rgba(20, 22, 30, 0.74), 0 2px 6px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+}
+.soc-badge--inline { position: static; box-shadow: none; }
+
+.soc-dock__tool {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-left: 4px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fin-text-3);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+.soc-dock__tool:active { transform: scale(0.92); }
+.soc-dock__tool[data-on='true'] { background: rgba(255, 255, 255, 0.14); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  .soc-dock__tool:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+}
+.soc-dock__home svg { width: 22px; height: 22px; color: var(--fin-text); }
+.soc-dock__sep { flex: none; width: 28px; height: 1px; margin: 1px 0 1px 8px; background: rgba(255, 255, 255, 0.12); }
+
+.soc-tip {
+  position: fixed;
+  left: 104px;
+  top: 0;
+  z-index: 20;
+  translate: 0 -50%;
+  transform-origin: left center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 9px;
+  background: rgba(30, 32, 42, 0.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.soc-tip kbd { font: 500 11px var(--fin-font-ui); color: var(--fin-text-muted); }
+
+/* ---------- page card ---------- */
+
+.soc-stage {
+  position: absolute;
+  left: 88px;
+  top: 44px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  border-radius: var(--fin-r-frame);
+  overflow: hidden;
+  background: #0b0d12;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.055), 0 30px 80px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.34);
+}
+
+/* ---------- split view ----------
+   Two apps side by side. The card gives way to one card per pane over the
+   wash and a divider sits in the gap. The focused pane draws nothing of its
+   own — the owner asked for no border or highlight on it; the pane tabs in
+   the title bar are the only sign of which side keys and sign-in act on.
+   Pages move between the whole card and a pane on `left`/`right`
+   transitions — never a scale (see Site.tsx). */
+
+.soc-stage[data-split='true'] {
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.soc-stage__slot { display: contents; }
+
+/* A <webview> would swallow the pointer while an icon or the divider moves. */
+.soc[data-dragging='true'] webview,
+.soc[data-resizing='true'] webview { pointer-events: none !important; }
+.soc[data-resizing='true'] { cursor: col-resize; }
+
+.soc-site {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+  --gap: 10px;
+  /* A one-shot when a split opens or closes; switched off while dragging the
+     divider (`[data-resizing]` below). The shadow lands with it, unanimated:
+     fading a shadow this large repaints the whole pane every frame. */
+  transition: left 260ms var(--ease-out), right 260ms var(--ease-out);
+}
+.soc-site--split-left,
+.soc-site--split-right {
+  overflow: hidden;
+  border-radius: var(--fin-r-frame);
+  background: #0b0d12;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.055), 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+.soc-site--split-left { right: calc((1 - var(--ratio)) * 100% + var(--gap) / 2); }
+.soc-site--split-right { left: calc(var(--ratio) * 100% + var(--gap) / 2); }
+.soc-webview { position: absolute; inset: 0; width: 100%; height: 100%; display: flex; border: 0; background: #0b0d12; }
+.soc[data-resizing='true'] .soc-site,
+.soc[data-resizing='true'] .soc-divider { transition: none; }
+
+.soc-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ratio) * 100% - 8px);
+  z-index: 6;
+  width: 16px;
+  display: grid;
+  place-items: center;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  transition: left 260ms var(--ease-out);
+}
+.soc-divider__grip {
+  width: 4px;
+  height: 44px;
+  border-radius: var(--fin-r-pill);
+  background: rgba(235, 240, 250, 0.28);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 180ms var(--ease-out), background-color 150ms ease;
+}
+.soc-divider:hover .soc-divider__grip,
+.soc-divider:focus-visible .soc-divider__grip,
+.soc[data-resizing='true'] .soc-divider__grip { transform: scaleY(1.64); background: rgba(255, 255, 255, 0.78); }
+.soc-divider:focus-visible .soc-divider__grip { outline: 2px solid var(--fin-accent-text); outline-offset: 3px; }
+
+/* Drop preview: where the dragged app will land, sliding between halves. */
+.soc-drop { position: absolute; inset: 0; z-index: 8; pointer-events: none; --r: 0.5; }
+.soc-stage[data-split='true'] .soc-drop { --r: var(--ratio); }
+.soc-drop__target {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-radius: 18px;
+  background: rgba(20, 22, 30, 0.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  backdrop-filter: blur(22px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 60px rgba(0, 0, 0, 0.35);
+  color: var(--fin-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: left var(--dur-med) var(--ease-out), right var(--dur-med) var(--ease-out);
+}
+.soc-drop[data-side='left'] .soc-drop__target { left: 8px; right: calc((1 - var(--r)) * 100% + 5px); }
+.soc-drop[data-side='right'] .soc-drop__target { left: calc(var(--r) * 100% + 5px); right: 8px; }
+.soc-drop__glyph {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--fin-text);
+}
+
+/* The icon itself follows the pointer while it is dragged. */
+.soc-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  will-change: transform;
+}
+.soc-drag-ghost img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 23%;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Title bar in split view: which pane is focused, swap, exit. */
+.soc-panes-bar { display: flex; align-items: center; gap: 8px; }
+.soc-panes {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 3px;
+  border-radius: var(--fin-r-pill);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-app-region: no-drag;
+}
+.soc-panes__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 22px;
+  padding: 0 11px 0 8px;
+  border: 0;
+  border-radius: var(--fin-r-pill);
+  background: transparent;
+  color: var(--fin-text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition: color 150ms ease, transform var(--dur-fast) var(--ease-out);
+}
+.soc-panes__tab[data-on='true'] { color: var(--fin-text); }
+.soc-panes__tab:active { transform: scale(0.97); }
+.soc-panes__tab > img,
+.soc-panes__tab > span:not(.soc-panes__lens) { position: relative; }
+.soc-panes__tab img { width: 15px; height: 15px; border-radius: 4px; transition: opacity 150ms ease; }
+.soc-panes__tab[data-on='false'] img { opacity: 0.7; }
+.soc-panes__lens {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+@media (hover: hover) and (pointer: fine) {
+  .soc-panes__tab[data-on='false']:hover { color: var(--fin-text-2); }
+}
+
+.soc-menu__sep { display: block; height: 1px; margin: 4px 8px; background: rgba(255, 255, 255, 0.08); }
+.soc-menu__hint { margin-left: auto; padding-left: 18px; font: 500 11px var(--fin-font-ui); color: var(--fin-text-faint); }
+
+.soc-site__snap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  pointer-events: none;
+  transition: opacity 260ms var(--ease-out);
+}
+.soc-site__snap[data-hidden='true'] { opacity: 0; }
+
+.soc-site__launch { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; pointer-events: none; background: #0b0d12; }
+.soc-site__launch img {
+  width: 76px;
+  height: 76px;
+  border-radius: 23%;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+  animation: soc-breathe 1.6s var(--ease-in-out) infinite alternate;
+}
+
+/* Two-finger history navigation. The guest streams normalized travel and
+   velocity; the host turns them into a glass edge material without touching
+   layout. During the gesture it follows 1:1 and a held gesture stays fixed.
+   Commit/cancel are the only animated phases, pulling the circular material
+   back into the edge it came from. */
+.soc-swipe-cue {
+  --swipe-x: 12px;
+  --swipe-scale: .72;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+}
+.soc-swipe-cue__orb {
+  position: absolute;
+  top: 50%;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  visibility: hidden;
+  background: rgba(220, 234, 255, .025);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .32), 0 0 24px rgba(180, 205, 255, .1);
+  will-change: transform;
+}
+.soc-swipe-cue[data-side='left'] .soc-swipe-cue__orb {
+  left: -38px;
+  transform: translate3d(var(--swipe-x), -50%, 0) scale(var(--swipe-scale));
+}
+.soc-swipe-cue[data-side='right'] .soc-swipe-cue__orb {
+  right: -38px;
+  transform: translate3d(calc(-1 * var(--swipe-x)), -50%, 0) scale(var(--swipe-scale));
+}
+.soc-swipe-cue[data-on='true'] .soc-swipe-cue__orb { visibility: visible; }
+.soc-swipe-cue__orb > .ql-content {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.soc-swipe-cue__orb i {
+  width: 11px;
+  height: 11px;
+  border: solid rgba(255, 255, 255, .92);
+  border-width: 0 0 2px 2px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .35));
+}
+.soc-swipe-cue[data-side='left'] .soc-swipe-cue__orb i { transform: rotate(45deg); }
+.soc-swipe-cue[data-side='right'] .soc-swipe-cue__orb i { transform: rotate(225deg); }
+.soc-swipe-cue[data-phase='commit'] .soc-swipe-cue__orb,
+.soc-swipe-cue[data-phase='cancel'] .soc-swipe-cue__orb {
+  transition: transform 240ms var(--ease-out);
+}
+.soc-swipe-cue[data-side='left'][data-phase='commit'] .soc-swipe-cue__orb { transform: translate3d(-38px, -50%, 0) scale(.42); }
+.soc-swipe-cue[data-side='right'][data-phase='commit'] .soc-swipe-cue__orb { transform: translate3d(38px, -50%, 0) scale(.42); }
+.soc-swipe-cue[data-side='left'][data-phase='cancel'] .soc-swipe-cue__orb { transform: translate3d(0, -50%, 0) scale(.62); }
+.soc-swipe-cue[data-side='right'][data-phase='cancel'] .soc-swipe-cue__orb { transform: translate3d(0, -50%, 0) scale(.62); }
+@keyframes soc-breathe {
+  from { transform: scale(0.97); opacity: 0.82; }
+  to { transform: scale(1.02); opacity: 1; }
+}
+
+/* "The signal travels the axon": loading runs along the card's top edge. Never a spinner.
+   Off, it is display:none once its fade ends, so the endless pulse inside stops
+   instead of restyling the window 18 times a second behind every idle page. */
+.soc-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 3;
+  overflow: hidden;
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) ease, display var(--dur-slow) allow-discrete;
+}
+.soc-edge[data-on='true'] { display: block; opacity: 1; }
+@starting-style {
+  .soc-edge[data-on='true'] { opacity: 0; }
+}
+.soc-edge span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 214, 170, 0.95), transparent);
+  animation: soc-axon var(--dur-pulse) var(--ease-in-out) infinite;
+}
+@keyframes soc-axon {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(270%); }
+}
+
+.soc-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--fin-text-muted); font-size: 14px; }
+.soc-empty p { margin: 0; }
+
+/* ---------- overview ---------- */
+
+.soc-overview {
+  position: absolute;
+  left: 88px;
+  top: 44px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+.soc-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 22px;
+  width: min(100%, 1080px);
+}
+.soc-tile { display: flex; flex-direction: column; gap: 10px; padding: 0; border: 0; background: transparent; text-align: left; outline: none; }
+.soc-tile__preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #10131a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 18px 40px rgba(0, 0, 0, 0.45);
+  transition: box-shadow var(--dur-base) var(--ease-out);
+}
+.soc-tile__preview > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.soc-tile[data-active='true'] .soc-tile__preview { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.62), 0 18px 40px rgba(0, 0, 0, 0.45); }
+.soc-tile:focus-visible .soc-tile__preview { box-shadow: 0 0 0 2px var(--fin-accent-text), 0 18px 40px rgba(0, 0, 0, 0.45); }
+.soc-tile__blank {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% 120%, rgba(255, 196, 150, 0.1), transparent 60%), #0f1218;
+}
+.soc-tile__blank img { width: 56px; height: 56px; border-radius: 23%; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5); }
+.soc-tile__label { display: flex; align-items: center; gap: 8px; padding: 0 2px; font-size: 13px; font-weight: 500; color: var(--fin-text-2); }
+.soc-tile__label > img { width: 18px; height: 18px; border-radius: 5px; }
+.soc-tile__state { margin-left: auto; font-size: 11.5px; color: var(--fin-text-faint); }
+
+/* ---------- materials: bubble, chip, panel, menu ---------- */
+
+.soc-bubble, .soc-chip, .soc-panel, .soc-menu {
+  background: rgba(26, 28, 38, 0.76);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.soc-bubble {
+  position: absolute;
+  top: 50px;
+  right: 22px;
+  z-index: 8;
+  width: 344px;
+  padding: 16px;
+  border-radius: 18px;
+  transform-origin: top right;
+}
+.soc-bubble__head { display: flex; gap: 12px; }
+.soc-bubble__key {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 196, 150, 0.14);
+  color: #ffd2ad;
+}
+.soc-bubble__title { margin: 0 0 3px; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+.soc-bubble__user { margin: 0 0 6px; font-size: 13px; color: var(--fin-text-3); user-select: text; }
+.soc-bubble__note { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--fin-text-faint); }
+.soc-bubble__actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+.soc-spacer { flex: 1; }
+
+.soc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 12px 0 10px;
+  border-radius: var(--fin-r-pill);
+  font-size: 12.5px;
+  color: var(--fin-text-3);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-app-region: no-drag;
+}
+.soc-chip svg { color: #ffd2ad; }
+.soc-chip b { font-weight: 600; color: var(--fin-text); }
+
+.soc-panel {
+  position: absolute;
+  left: 86px;
+  bottom: 20px;
+  z-index: 8;
+  width: 344px;
+  padding: 14px 14px 8px;
+  border-radius: 18px;
+  transform-origin: left bottom;
+}
+.soc-panel__head { display: flex; align-items: center; justify-content: space-between; }
+.soc-panel__head h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+.soc-panel__note { margin: 4px 0 8px; font-size: 11.5px; line-height: 1.4; color: var(--fin-text-faint); }
+.soc-panel__list { list-style: none; margin: 0; padding: 0; }
+.soc-panel__row { display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--fin-hairline); }
+.soc-panel__icon { width: 26px; height: 26px; border-radius: 23%; flex: none; }
+.soc-panel__name { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 13px; font-weight: 500; }
+.soc-panel__sub { font-size: 11.5px; font-weight: 400; color: var(--fin-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.soc-panel__confirm { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fin-text-muted); }
+
+.soc-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--fin-text-3);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.soc-icon-btn:active { transform: scale(0.94); }
+
+.soc-menu-scrim { position: fixed; inset: 0; z-index: 29; }
+.soc-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 196px;
+  padding: 5px;
+  border-radius: 12px;
+  transform-origin: top left;
+}
+.soc-menu__title { margin: 4px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fin-text-faint); }
+.soc-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fin-text-2);
+  font-size: 13px;
+  text-align: left;
+}
+.soc-menu__item:disabled { color: rgba(226, 234, 252, 0.3); }
+.soc-menu__item:not(:disabled):hover, .soc-menu__item:not(:disabled):focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
+
+.soc-pill {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: var(--fin-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fin-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) ease;
+}
+.soc-pill:active { transform: scale(0.97); }
+.soc-pill--action { background: var(--fin-action); border-color: transparent; color: var(--fin-action-ink); }
+.soc-link { padding: 0; border: 0; background: transparent; color: var(--fin-accent-text); font-size: 12.5px; }
+.soc-link--danger { color: var(--fin-negative-text); }
+
+/* ---------- stand-in pages (plain browser only) ---------- */
+
+.soc-mock { display: grid; grid-template-columns: 220px 1fr; background: #000; }
+.soc-mock__rail { display: flex; flex-direction: column; gap: 18px; padding: 26px 22px; border-right: 1px solid #1c1f24; }
+.soc-mock__rail img { width: 30px; height: 30px; border-radius: 23%; margin-bottom: 14px; }
+.soc-mock__rail span { height: 12px; width: 70%; border-radius: 6px; background: #1c1f24; }
+.soc-mock__feed { display: flex; flex-direction: column; gap: 22px; padding: 26px 48px; width: min(100%, 560px); }
+.soc-mock__post { display: grid; grid-template-columns: 36px 1fr; gap: 10px 12px; }
+.soc-mock__avatar { width: 36px; height: 36px; border-radius: 50%; background: #262a30; }
+.soc-mock__line { align-self: center; height: 12px; width: 40%; border-radius: 6px; background: #262a30; }
+.soc-mock__media { grid-column: 2; height: 220px; border-radius: 12px; background: linear-gradient(135deg, #1c1f24, #14171b); }
+
+/* ---------- accessibility preferences ---------- */
+
+@media (prefers-reduced-transparency: reduce) {
+  .soc-bubble, .soc-chip, .soc-panel, .soc-menu, .soc-tip { background: #181b24; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .soc-dock__glass { background: #14171e; }
+}
+@media (prefers-contrast: more) {
+  .soc-bubble, .soc-chip, .soc-panel, .soc-menu, .soc-dock__glass, .soc-nav { border-color: rgba(255, 255, 255, 0.4); }
+}
+
+/* ---------- launch panel ----------
+   An app opening out of its icon (Launch.tsx): a card in the app's colour that
+   scales out from behind the icon to the page's box, holds over the page until
+   the site has loaded, then fades. Only transform and opacity animate, so the
+   growth runs on the compositor while the new page is being created. Above the
+   dock (so it visibly leaves the icon), below menus, bubbles and the drag
+   ghost. The card absorbs clicks — the page under it isn't ready yet. */
+.soc-launch { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+.soc-launch__panel {
+  position: absolute;
+  border-radius: var(--fin-r-frame);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transform-origin: 0 0;
+  pointer-events: auto;
+  will-change: transform, opacity;
+}
+.soc-launch__glyph {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 96px;
+  height: 96px;
+  transform-origin: 0 0;
+  will-change: transform;
+  border-radius: 23%;
+}
+.soc-launch__lift { width: 100%; height: 100%; will-change: transform, opacity; }
+.soc-launch__glyph img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 23%;
+  transform: scale(1.08);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+.soc-launch[data-holding='true'] .soc-launch__glyph img { animation: soc-breathe 1.6s var(--ease-in-out) infinite alternate; }
+.soc-launch__pulse {
+  position: absolute;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--dur-slow) ease;
+}
+.soc-launch[data-holding='true'] .soc-launch__pulse { opacity: 1; }
+.soc-launch__pulse span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  animation: soc-axon var(--dur-pulse) var(--ease-in-out) infinite;
+}

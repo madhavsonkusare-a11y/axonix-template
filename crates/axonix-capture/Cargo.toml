@@ -1,0 +1,26 @@
+[package]
+name = "axonix-capture"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+axum = { workspace = true }
+tower-http = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+camino = { workspace = true }
+chrono = { workspace = true }
+rand = { workspace = true }
+axonix-vault = { workspace = true }
+axonix-index = { workspace = true }
+axonix-agent = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,289 @@
+/* ============================================================
+   AXONIX — Design Tokens
+   Layer 1: primitives (raw values, never referenced by components)
+   Layer 2: semantic   (the only thing UI code touches)
+   Dark-first. Light theme remaps layer 2 only.
+
+   Design language: Dense · Precise · Alive · Local
+   Palette: MONOCHROME — white, black, grey. No accent hue.
+   ============================================================ */
+
+:root {
+  /* ---------- LAYER 1: PRIMITIVES ---------- */
+
+  /* Neutral ramp — the entire palette. Very slightly cool so large dark
+     surfaces don't read as muddy brown-black on wide-gamut displays. */
+  --n-1000: #000000;
+  --n-950:  #08090B;
+  --n-900:  #0D0F12;
+  --n-850:  #14171B;
+  --n-800:  #1C1F24;
+  --n-700:  #262A30;
+  --n-600:  #31363D;
+  --n-500:  #434951;
+  --n-400:  #5B626B;
+  --n-300:  #7C838D;
+  --n-200:  #A2A9B2;
+  --n-100:  #C9CED4;
+  --n-050:  #E8EAED;
+  --n-000:  #FFFFFF;
+
+  /* ============================================================
+     ACCENT —Axonix Lime Green
+
+     The accent role carries the brand identity through the UI: the
+     verified badge, the axon-pulse, the command-palette selection,
+     the focus ring. Swapping these six values retones the whole app.
+     ============================================================ */
+    --accent-bright: #A3E635;
+    --accent-base:   #A3E635;
+    --accent-mid:    #84CC16;
+    --accent-dim:    #434951;
+    --accent-deep:   #1C2E0A;
+    --accent-on:     var(--n-1000);   /* text/icon colour ON an accent fill */
+
+  /* Spacing — 4px base. "Dense" means you rarely exceed --sp-4. */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;  --sp-4: 16px;
+  --sp-5: 20px;  --sp-6: 24px;  --sp-8: 32px;  --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px;
+
+  /* Radius — small. "Precise" is sharp, not friendly. */
+  --r-xs: 3px; --r-sm: 5px; --r-md: 7px; --r-lg: 10px; --r-full: 999px;
+
+  /* ---------- TYPE ----------
+     Geist for all UI text. Instrument Sans for data labels on charts only.
+     Ship subset variable .woff2 locally — no Google Fonts link ("Local"). */
+  --font-ui:   "Geist", "Segoe UI Variable", system-ui, sans-serif;
+  --font-data: "Instrument Sans", "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Code", ui-monospace, monospace;
+
+  --ts-xs:  11px;  /* metadata, badges       */
+  --ts-sm:  12px;  /* secondary, tree labels */
+  --ts-md:  13px;  /* BASE UI SIZE           */
+  --ts-lg:  15px;  /* editor body            */
+  --ts-xl:  19px;  /* panel titles           */
+  --ts-2xl: 25px;  /* page headings          */
+
+  --lh-tight: 1.25; --lh-normal: 1.5; --lh-prose: 1.65;
+  --fw-normal: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700;
+
+  /* Density — desktop power tool, not a website */
+  --row-h: 28px;
+  --control-h: 30px;
+  --toolbar-h: 38px;
+
+  /* Motion — two durations, plus the signature pulse. "Alive". */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-pulse: 1200ms;
+  --dur-exit: 150ms;   /* leaving is faster than arriving */
+  --dur-press: 160ms;  /* press feedback */
+  --dur-med: 200ms;    /* small surfaces arriving */
+  --dur-slow: 240ms;   /* something moving across the screen */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);        /* entering, exiting, press */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);   /* moving on screen */
+
+
+  /* ---------- LAYER 2: SEMANTIC (dark, default) ---------- */
+
+  --bg-sunken:   var(--n-950);
+  --bg-base:     var(--n-900);
+  --bg-surface:  var(--n-850);
+  --bg-raised:   var(--n-800);
+  --bg-overlay:  var(--n-700);
+  --bg-hover:    rgba(255,255,255,0.05);
+  --bg-active:   rgba(255,255,255,0.09);
+  --bg-selected: rgba(255,255,255,0.12);
+
+  --border-subtle:  var(--n-700);
+  --border-default: var(--n-600);
+  --border-strong:  var(--n-400);
+
+  --text-primary:   var(--n-050);
+  --text-secondary: var(--n-200);
+  --text-muted:     var(--n-300);
+  --text-inverse:   var(--n-1000);
+
+  --signal:       var(--accent-base);
+  --signal-hover: var(--accent-bright);
+  --signal-dim:   var(--accent-dim);
+  --signal-text:  var(--accent-bright);
+  --on-signal:    var(--accent-on);
+
+  /* ---------- TRUST STATES ----------
+     Mirrors vault frontmatter `status:`. With no hue available, these are
+     distinguished by LUMINANCE + BORDER STYLE + ICON, never colour alone.
+     This is more accessible than a hue pair would have been. */
+  --verified-fg:      var(--n-050);
+  --verified-bg:      rgba(255,255,255,0.06);
+  --verified-border:  var(--n-400);
+  --verified-border-style: solid;
+
+  --unverified-fg:     var(--n-300);
+  --unverified-bg:     transparent;
+  --unverified-border: var(--n-600);
+  --unverified-border-style: dashed;
+
+  /* ---------- STATUS ----------
+     Monochrome. NOTE: luminance alone is a weak alert signal — every use of
+     --status-danger MUST also carry an icon or explicit label. Do not rely on
+     these tokens to communicate severity on their own. */
+  --status-ok:     var(--n-050);
+  --status-warn:   var(--n-200);
+  --status-danger: var(--n-000);
+  --status-danger-bg: rgba(255,255,255,0.10);
+  --status-info:   var(--n-200);
+
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent-bright);
+
+  /* In dark UI elevation is a lighter surface, not a shadow.
+     Shadows anchor genuinely floating layers only. */
+  --shadow-popover: 0 8px 24px rgba(0,0,0,0.60);
+  --shadow-modal:   0 24px 64px rgba(0,0,0,0.75);
+
+  /* Logo inherits colour — shape fixed, colour dynamic */
+  --logo-color: var(--text-primary);
+}
+
+/* ---------- LIGHT THEME: remaps layer 2 only ---------- */
+:root[data-theme="light"] {
+  --accent-bright: var(--n-1000);
+  --accent-base:   var(--n-900);
+  --accent-mid:    var(--n-500);
+  --accent-dim:    var(--n-200);
+  --accent-deep:   var(--n-100);
+  --accent-on:     var(--n-000);
+
+  --bg-sunken:   var(--n-100);
+  --bg-base:     var(--n-050);
+  --bg-surface:  var(--n-000);
+  --bg-raised:   var(--n-000);
+  --bg-overlay:  var(--n-000);
+  --bg-hover:    rgba(0,0,0,0.05);
+  --bg-active:   rgba(0,0,0,0.09);
+  --bg-selected: rgba(0,0,0,0.12);
+
+  --border-subtle:  var(--n-100);
+  --border-default: var(--n-200);
+  --border-strong:  var(--n-400);
+
+  --text-primary:   var(--n-950);
+  --text-secondary: var(--n-400);
+  --text-muted:     var(--n-300);
+  --text-inverse:   var(--n-000);
+
+  --verified-fg:      var(--n-950);
+  --verified-bg:      rgba(0,0,0,0.05);
+  --verified-border:  var(--n-400);
+
+  --unverified-fg:     var(--n-300);
+  --unverified-bg:     transparent;
+  --unverified-border: var(--n-200);
+
+  --status-ok:     var(--n-950);
+  --status-warn:   var(--n-400);
+  --status-danger: var(--n-1000);
+  --status-danger-bg: rgba(0,0,0,0.08);
+  --status-info:   var(--n-400);
+
+  --shadow-popover: 0 8px 24px rgba(13,15,18,0.14);
+  --shadow-modal:   0 24px 64px rgba(13,15,18,0.20);
+}
+
+/* ============================================================
+   SIGNATURE MOTION — "the signal travels the axon"
+   Agent thinking, indexing, plugin activity. Never a spinner.
+   ============================================================ */
+@keyframes axon-pulse {
+  0%   { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+
+.axon-active {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--signal) 45%,
+    var(--signal) 55%,
+    transparent 100%
+  );
+  background-size: 60% 100%;
+  background-repeat: no-repeat;
+  animation: axon-pulse var(--dur-pulse) var(--ease-out) infinite;
+}
+
+/* Trust affordances — luminance + border style, never colour alone */
+.note--verified {
+  color: var(--verified-fg);
+  background: var(--verified-bg);
+  border: 1px var(--verified-border-style) var(--verified-border);
+}
+.note--unverified {
+  color: var(--unverified-fg);
+  background: var(--unverified-bg);
+  border: 1px var(--unverified-border-style) var(--unverified-border);
+}
+
+/* Logo: shape fixed, colour inherited */
+.axonix-logo { color: var(--logo-color); display: block; }
+
+/* ============================================================
+   LAYER 3: FINANCE SURFACE (--fin-*)
+   Added by the dashboards handoff.
+
+   Deliberately a SEPARATE layer, not a swap of the parked accent block
+   above. The window chrome, command palette and every trust affordance
+   stay monochrome; hue is spent only inside the launcher and the finance
+   tracker, where it carries data (series identity, over-limit, positive
+   vs negative). Two surfaces, one file, no drift.
+
+   Dark only — these do not remap under [data-theme="light"], because the
+   aurora cards depend on dark ink sitting on a bright gradient band.
+   ============================================================ */
+
+:root {
+  /* ground */
+  --fin-bg:             #06070a;   /* page                */
+  --fin-bg-rail:        #090b0f;   /* nav rail            */
+  --fin-card-base:      #0b0d12;   /* aurora card base    */
+
+  /* glass card */
+  --fin-card-fill:      linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  --fin-card-fill-hi:   linear-gradient(180deg, rgba(255,255,255,.07),  rgba(255,255,255,.022));
+  --fin-card-border:    rgba(255,255,255,.075);
+  --fin-card-border-hi: rgba(255,255,255,.09);
+  --fin-hairline:       rgba(255,255,255,.06);
+
+  /* ink */
+  --fin-text:           #f7f9fc;
+  --fin-text-2:         #eef2f9;
+  --fin-text-3:         rgba(235,240,250,.84);
+  /* Muted and faint both clear 4.5:1 on every Axonix surface (Apple's floor for
+     small text). Faint was .36 (2.9:1) and hints were hard to read. */
+  --fin-text-muted:     rgba(226,234,252,.6);
+  --fin-text-faint:     rgba(226,234,252,.5);
+
+  /* accent + signal */
+  --fin-accent:         #5b8cff;   /* charts, active states, badges      */
+  --fin-accent-2:       #7cc4ff;   /* gradient partner                   */
+  --fin-accent-3:       #6f9dff;
+  --fin-accent-text:    #9db9ff;   /* accent-coloured type on dark       */
+  --fin-action:         #0071e3;   /* filled buttons ONLY                */
+  --fin-action-ink:     #f4f8fb;
+  --fin-positive:       #5fe0a2;
+  --fin-negative:       #ff6b6b;
+  --fin-negative-text:  #ffa1a1;
+
+  /* radii — two families */
+  --fin-r-tile:  16px;
+  --fin-r-card:  18px;
+  --fin-r-hero:  20px;
+  --fin-r-frame: 22px;
+  --fin-r-pill:  980px;   /* every button, chip, badge, progress bar */
+  --fin-r-glyph: 8px;
+
+  /* type — Geist for text (see Open decision #2: SF Pro is native-only and
+     resolves to Segoe UI here), Azeret Mono for every numeral. */
+  --fin-font-ui:  var(--font-ui);
+  --fin-font-num: "Azeret Mono", var(--font-mono);
+}

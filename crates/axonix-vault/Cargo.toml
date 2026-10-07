@@ -1,0 +1,18 @@
+[package]
+name = "axonix-vault"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+camino = { workspace = true }
+walkdir = { workspace = true }
+turbovault-parser = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

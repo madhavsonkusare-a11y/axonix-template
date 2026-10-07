@@ -1,0 +1,175 @@
+/* Axonix on the mark: the assistant's panel (assistant/Ask.tsx).
+   It carries its own colours, because it can open over a first-version screen,
+   which has none of the new shell's tokens. Same values as `--nx-*`.
+
+   Glass, because it floats. Signal blue marks what the assistant is doing and
+   nothing else; green ticks are steps that happened; amber is a step that did
+   not work. Nothing spins: at work, the mark's three terminals light in turn
+   and a pulse runs along a hairline. */
+
+.ax-ask {
+  --ax-ink: #f2f2f0;
+  --ax-ink-2: rgba(242, 242, 240, 0.66);
+  --ax-ink-3: rgba(242, 242, 240, 0.44);
+  --ax-ink-4: rgba(242, 242, 240, 0.2);
+  --ax-rule: rgba(255, 255, 255, 0.08);
+  --ax-rule-2: rgba(255, 255, 255, 0.14);
+  --ax-live: #7cc4ff;
+  --ax-pos: #5fe0a2;
+  --ax-att: #ffc496;
+  --ax-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  position: fixed;
+  z-index: 47;
+  display: flex;
+  flex-direction: column;
+  width: min(460px, calc(100vw - 24px));
+  max-height: min(660px, calc(100vh - 132px));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px;
+  background: rgba(24, 24, 26, 0.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: 0 26px 60px -18px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: var(--ax-ink);
+  font-size: 13.5px;
+  line-height: 1.45;
+  animation: ax-in 240ms var(--ax-enter);
+  -webkit-app-region: no-drag;
+}
+@keyframes ax-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.97); }
+}
+
+.ax-ask__head { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 12px 10px 16px; }
+.ax-ask__head b { font-size: 14px; font-weight: 600; letter-spacing: -0.005em; }
+.ax-ask__mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--ax-ink); color: #111112; }
+.ax-ask__mark svg { width: 19px; height: 19px; display: block; }
+.ax-ask__space { flex: 1; }
+
+/* The mark at work: its three terminals light in turn, 120 ms apart on a 1.2 s loop. */
+.ax-terminals circle { fill: #7cc4ff; opacity: 0; animation: ax-terminal 1.2s linear infinite; }
+.ax-terminals circle:nth-child(2) { animation-delay: 120ms; }
+.ax-terminals circle:nth-child(3) { animation-delay: 240ms; }
+@keyframes ax-terminal {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  40% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.ax-ask__body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding: 4px 18px 16px; overscroll-behavior: contain; }
+
+/* one question and what came of it */
+.ax-turn { display: flex; flex-direction: column; gap: 10px; }
+.ax-turn + .ax-turn { padding-top: 16px; border-top: 1px solid var(--ax-rule); }
+.ax-turn__q { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ax-ink-3); overflow-wrap: anywhere; }
+.ax-turn__end { margin: 0; font-size: 12.5px; color: var(--ax-ink-3); }
+
+.ax-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ax-step { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--ax-ink-3); animation: ax-rise 240ms var(--ax-enter) both; }
+.ax-step > svg { flex: none; align-self: center; color: var(--ax-pos); }
+.ax-step > span { min-width: 0; overflow-wrap: anywhere; }
+.ax-step[data-changed] > span { color: var(--ax-ink-2); }
+.ax-step[data-failed] > svg { color: var(--ax-att); }
+.ax-step[data-undone] > span { text-decoration: line-through; text-decoration-color: var(--ax-ink-4); }
+.ax-step em { font-style: normal; color: var(--ax-ink-3); }
+.ax-step .fin-link { flex: none; font-size: 12.5px; }
+.ax-step b { font-weight: 500; color: var(--ax-ink-2); }
+@keyframes ax-rise {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+}
+
+/* Working: a bright segment runs along a hairline. Transform only. */
+.ax-pulse { position: relative; display: block; height: 1px; overflow: hidden; background: var(--ax-rule-2); }
+.ax-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0, var(--ax-live) 28px, transparent 56px) no-repeat;
+  animation: ax-run 900ms linear infinite;
+}
+@keyframes ax-run {
+  from { transform: translate3d(-56px, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+
+.ax-answer { font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+
+.ax-error { display: flex; flex-direction: column; gap: 10px; padding: 11px 13px; border: 1px solid rgba(255, 196, 150, 0.3); border-radius: 12px; background: rgba(255, 196, 150, 0.06); }
+.ax-error p { margin: 0; font-size: 13px; color: var(--ax-ink); }
+.ax-error__acts { display: flex; gap: 8px; }
+.ax-error__acts .fin-pill { gap: 6px; }
+
+/* a thing the question is about */
+.ax-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 24px; padding: 0 4px 0 8px; border: 1px solid var(--ax-rule-2); border-radius: 999px; background: rgba(255, 255, 255, 0.05); font-size: 12px; color: var(--ax-ink-2); }
+.ax-chip > span { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-chip > button { display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ax-ink-3); cursor: pointer; }
+.ax-chip > button:hover { background: rgba(255, 255, 255, 0.12); color: var(--ax-ink); }
+.ax-chip--quiet { padding-right: 8px; }
+
+/* the first thing it says, and the once-only note about the plan */
+.ax-start { display: flex; flex-direction: column; gap: 12px; }
+.ax-start p { margin: 0; color: var(--ax-ink-2); }
+.ax-start__list { display: flex; flex-direction: column; gap: 6px; }
+.ax-start__one { height: 36px; padding: 0 12px; border: 1px solid var(--ax-rule); border-radius: 12px; background: rgba(255, 255, 255, 0.03); color: var(--ax-ink); font: inherit; font-size: 13px; text-align: left; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease, transform 140ms var(--ax-enter); }
+.ax-start__one:hover { border-color: var(--ax-rule-2); background: rgba(255, 255, 255, 0.06); }
+.ax-start__one:active { transform: scale(0.985); }
+.ax-start__one:focus-visible { outline: none; box-shadow: 0 0 0 2px #111112, 0 0 0 4px rgba(242, 242, 240, 0.7); }
+.ax-note { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; border: 1px solid var(--ax-rule-2); border-radius: 14px; background: rgba(255, 255, 255, 0.04); }
+.ax-note b { font-weight: 600; }
+.ax-note p { margin: 0 0 4px; font-size: 13px; color: var(--ax-ink-2); }
+
+/* the field */
+.ax-ask__form { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--ax-rule); }
+.ax-ask__form > .ax-chip { align-self: flex-start; }
+.ax-ask__field { display: flex; align-items: flex-end; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid var(--ax-rule-2); border-radius: 16px; background: rgba(0, 0, 0, 0.25); transition: border-color 120ms ease; }
+.ax-ask__field:focus-within { border-color: rgba(242, 242, 240, 0.44); }
+.ax-ask__field textarea { flex: 1; min-width: 0; min-height: 28px; max-height: 120px; padding: 4px 0; border: 0; outline: none; resize: none; background: none; color: var(--ax-ink); font: inherit; font-size: 14px; line-height: 1.45; field-sizing: content; }
+.ax-ask__field textarea::placeholder { color: var(--ax-ink-3); }
+.ax-send { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: var(--ax-ink); color: #111112; cursor: pointer; transition: opacity 120ms ease, transform 140ms var(--ax-enter); }
+.ax-send:disabled { opacity: 0.25; cursor: default; }
+.ax-send:not(:disabled):active { transform: scale(0.94); }
+.ax-send:focus-visible { outline: none; box-shadow: 0 0 0 2px #111112, 0 0 0 4px rgba(242, 242, 240, 0.7); }
+.ax-plan { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 4px; font-size: 11.5px; color: var(--ax-ink-3); }
+.ax-plan .fin-link { font-size: 11.5px; }
+
+/* before sign-in */
+.ax-connect { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 4px 18px 18px; overflow-y: auto; }
+.ax-connect h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.012em; }
+.ax-connect > p { margin: 0; color: var(--ax-ink-2); }
+.ax-chatgpt { height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--ax-ink); color: #111112; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 140ms var(--ax-enter); }
+.ax-chatgpt:active { transform: scale(0.97); }
+.ax-chatgpt:focus-visible { outline: none; box-shadow: 0 0 0 2px #111112, 0 0 0 4px rgba(242, 242, 240, 0.7); }
+.ax-connect__wait { align-self: stretch; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.ax-connect__wait .ax-pulse { align-self: stretch; }
+.ax-connect__wait p { margin: 0; color: var(--ax-ink-2); }
+.ax-connect__error { margin: 0; color: var(--ax-att); }
+.ax-connect__facts { align-self: stretch; list-style: none; margin: 4px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ax-rule); display: flex; flex-direction: column; gap: 7px; font-size: 12px; color: var(--ax-ink-3); }
+.ax-connect__facts li { position: relative; padding-left: 12px; }
+.ax-connect__facts li::before { content: ''; position: absolute; left: 1px; top: 0.62em; width: 3px; height: 3px; border-radius: 50%; background: var(--ax-ink-4); }
+
+/* account, model, usage */
+.ax-settings { display: flex; flex-direction: column; gap: 14px; padding: 4px 18px 16px; overflow-y: auto; }
+.ax-settings dl { margin: 0; display: flex; flex-direction: column; }
+.ax-settings dl > div { display: grid; grid-template-columns: 148px minmax(0, 1fr); align-items: center; gap: 12px; min-height: 42px; border-bottom: 1px solid var(--ax-rule); }
+.ax-settings dt { font-size: 12.5px; color: var(--ax-ink-3); }
+.ax-settings dd { margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.ax-settings__test { display: flex; align-items: center; gap: 12px; }
+.ax-settings__test span { font-size: 12px; color: var(--ax-ink-3); }
+.ax-settings__result .ax-step { animation: none; }
+.ax-settings__foot { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.ax-settings__error { margin: 0; font-size: 12.5px; color: var(--ax-att); }
+
+/* While the panel is open low on the screen, toasts stand beside it (they carry Undo), or at the top when there is no room. */
+:root[data-ax-toasts='beside'] [data-sonner-toaster][data-y-position='bottom'] { left: var(--ax-toast-left) !important; transform: none !important; }
+:root[data-ax-toasts='top'] [data-sonner-toaster][data-y-position='bottom'] { top: 56px !important; bottom: auto !important; }
+
+/* the mark in the command bar's Ask rows */
+.palette__mark { display: grid; place-items: center; width: 14px; height: 14px; }
+.palette__mark svg { width: 15px; height: 15px; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-ask, .ax-step { animation: none; }
+  .ax-pulse::after { animation: none; transform: none; background: var(--ax-live); opacity: 0.5; }
+  .ax-terminals circle { animation: none; opacity: 1; }
+}

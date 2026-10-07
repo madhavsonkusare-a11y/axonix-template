@@ -1,0 +1,65 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/axonix-vault",
+    "crates/axonix-index",
+    "crates/axonix-mcp",
+    "crates/axonix-agent",
+    "crates/axonix-capture",
+    "crates/axonix-shell",
+]
+
+# NOTE: `axonix-viewspec` was removed in favour of json-render (Apache-2.0).
+# Decision A: the UI schema's source of truth is the Zod catalog in `ui/`, not Rust.
+# Rust emits plain JSON. See "02 Open Source Foundations" in the vault.
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+authors = ["Madhav Sonkusare"]
+
+[workspace.dependencies]
+# internal
+axonix-vault = { path = "crates/axonix-vault" }
+axonix-index = { path = "crates/axonix-index" }
+axonix-agent = { path = "crates/axonix-agent" }
+axonix-shell = { path = "crates/axonix-shell" }
+
+# core
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror  = "2"
+anyhow     = "1"
+tracing    = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# async
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "process", "io-util", "sync", "time", "net"] }
+
+# vault parsing — Obsidian-flavoured markdown
+turbovault-parser = "1.6"
+
+# index
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+notify   = "7"
+walkdir  = "2"
+camino   = { version = "1", features = ["serde1"] }
+
+# MCP — ONLY from crates.io. Six GitHub repos claim to be the official SDK; they are
+# forks carrying the upstream description. Never add this by git URL.
+rmcp = { version = "3.1", features = ["server", "client", "macros", "schemars", "transport-io"] }
+chrono = "0.4"
+
+# capture server — bound to 127.0.0.1 only
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors", "limit", "trace"] }
+rand = "0.9"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

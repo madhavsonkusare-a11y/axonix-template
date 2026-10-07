@@ -1,0 +1,280 @@
+/* Guests at the door (src/door/): the agents in the sidebar, their cursor,
+   the panel an agent opens in, and the Agents surface.
+
+   It carries its own colours, because a panel can stay open over a
+   first-version screen, which has none of the new shell's tokens. Same values
+   as `--nx-*`.
+
+   Colour has a reason here as everywhere: the live blue is an agent acting
+   now, amber is the owner's move ("Waiting on you") or something that did not
+   work, and everything else is ink. No dashed lines. */
+
+.door-side,
+.door-chip,
+.door-panel,
+.door-cursor {
+  --d-ink: #f2f2f0;
+  --d-ink-2: rgba(242, 242, 240, 0.66);
+  --d-ink-3: rgba(242, 242, 240, 0.44);
+  --d-rule: rgba(255, 255, 255, 0.08);
+  --d-rule-2: rgba(255, 255, 255, 0.14);
+  --d-hover: rgba(255, 255, 255, 0.05);
+  --d-live: #7cc4ff;
+  --d-att: #ffc496;
+  --d-pos: #5fe0a2;
+  --d-enter: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---- the sidebar ---- */
+
+.door-side { flex: none; display: flex; flex-direction: column; gap: 2px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--d-rule); }
+/* A module's own foot is pushed to the bottom; the agents sit under it. */
+.nx-side > :not(.nx-side__foot) + .door-side { margin-top: auto; }
+.nx-side > .nx-side__foot + .door-side { margin-top: 12px; }
+.door-side__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--d-ink-3);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.door-side__head:hover { color: var(--d-ink); background: var(--d-hover); }
+.door-side__head:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.door-agent { height: auto; min-height: 42px; padding-top: 5px; padding-bottom: 5px; gap: 10px; text-align: left; }
+.door-agent--none { min-height: 30px; color: var(--d-ink-3); font-size: 12.5px; }
+.door-agent__mark { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: rgba(255, 255, 255, 0.07); color: var(--d-ink); }
+.door-agent__text { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.door-agent__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 550; color: var(--d-ink); }
+.door-agent__sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--d-ink-3); }
+.door-agent__state { margin-left: auto; flex: none; padding-left: 6px; font-size: 10.5px; color: var(--d-ink-3); white-space: nowrap; }
+[data-state='acting'] > .door-agent__state,
+[data-state='acting'] > .door-agent__mark { color: var(--d-live); }
+[data-state='waiting'] > .door-agent__state { color: var(--d-att); }
+
+/* A call with nothing on screen to point at: the row answers instead. */
+[data-agent-row][data-pulse] .door-agent__mark,
+.door-chip[data-pulse] { animation: door-pulse 800ms var(--d-enter); }
+@keyframes door-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(124, 196, 255, 0.55); }
+  100% { box-shadow: 0 0 0 9px rgba(124, 196, 255, 0); }
+}
+
+.door-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--d-ink-2);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.door-chip:hover { background: rgba(255, 255, 255, 0.1); color: var(--d-ink); }
+.door-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.door-chip[data-state='acting'] { color: var(--d-live); }
+.door-chip[data-state='waiting'] { color: var(--d-att); }
+
+/* ---- the cursor ---- */
+
+.door-cursor {
+  position: fixed;
+  z-index: 60;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  transition: transform 620ms var(--d-enter), opacity 260ms linear;
+  will-change: transform;
+}
+/* At the agent's row for one frame, before it sets out. */
+.door-cursor[data-leaving] { opacity: 0.3; }
+.door-cursor__arrow { display: block; fill: var(--d-live); stroke: #06070a; stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5)); }
+.door-cursor__tag {
+  position: absolute;
+  left: 13px;
+  top: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px 0 6px;
+  border-radius: 6px 10px 10px 10px;
+  background: var(--d-live);
+  color: #06121c;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* What an agent just changed lights once, then rests. */
+[data-agent-touched] { animation: door-touched 1500ms var(--ease-out, ease-out); }
+@keyframes door-touched {
+  0% { box-shadow: inset 0 0 0 1.5px rgba(124, 196, 255, 0.9), 0 0 0 4px rgba(124, 196, 255, 0.18); }
+  100% { box-shadow: inset 0 0 0 1.5px rgba(124, 196, 255, 0), 0 0 0 4px rgba(124, 196, 255, 0); }
+}
+
+/* ---- the panel ---- */
+
+.door-panel {
+  position: fixed;
+  z-index: 46;
+  top: 46px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100vw - 24px));
+  border: 1px solid var(--d-rule-2);
+  border-radius: 18px;
+  background: #121213;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.85), 0 2px 10px rgba(0, 0, 0, 0.35);
+  color: var(--d-ink);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow: hidden;
+  animation: door-panel-in 320ms var(--d-enter);
+  -webkit-app-region: no-drag;
+}
+.door-panel[data-wide] { width: min(620px, calc(100vw - 24px)); }
+.door-panel--agents { width: min(520px, calc(100vw - 24px)); }
+@keyframes door-panel-in { from { opacity: 0; transform: translate3d(24px, 0, 0); } }
+
+.door-panel__head { flex: none; display: flex; align-items: center; gap: 11px; padding: 14px 12px 10px 16px; }
+.door-panel__title { min-width: 0; flex: 1; display: flex; flex-direction: column; line-height: 1.25; }
+.door-panel__title b { font-size: 14.5px; font-weight: 600; letter-spacing: -0.014em; }
+.door-panel__title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--d-ink-3); }
+.door-panel__title span[data-state='acting'] { color: var(--d-live); }
+.door-panel__title span[data-state='waiting'] { color: var(--d-att); }
+
+.door-tabs { flex: none; display: flex; gap: 2px; padding: 0 12px 8px; border-bottom: 1px solid var(--d-rule); }
+.door-tabs button { height: 28px; padding: 0 11px; border: 0; border-radius: 8px; background: none; color: var(--d-ink-3); font: inherit; font-size: 12.5px; font-weight: 550; cursor: pointer; }
+.door-tabs button:hover { color: var(--d-ink); background: var(--d-hover); }
+.door-tabs button[aria-selected='true'] { color: var(--d-ink); background: rgba(255, 255, 255, 0.085); }
+.door-tabs button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.door-panel__body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 16px; }
+.door-panel__body[data-tab='terminal'],
+.door-panel__body[data-tab='chat'] { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+
+.door-empty { margin: 6px 0 12px; color: var(--d-ink-3); font-size: 12.5px; }
+.door-empty p { margin: 0 0 10px; }
+.door-note { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px; padding: 9px 11px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); font-size: 12.5px; }
+.door-note svg { flex: none; margin-top: 2px; }
+.door-note--att { color: var(--d-att); background: rgba(255, 196, 150, 0.1); }
+.door-h { margin: 18px 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--d-ink-3); }
+.door-h:first-child { margin-top: 2px; }
+
+/* terminal */
+.door-term { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #0c0c0d; }
+.door-term .door-note { margin: 12px 14px 0; }
+.door-term__box { flex: 1; min-height: 0; padding: 10px 4px 8px 12px; }
+.door-term__box .xterm { height: 100%; }
+.door-term__box .xterm-viewport { scrollbar-width: thin; }
+
+/* steps */
+.door-steps { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.door-step { display: flex; align-items: center; gap: 9px; min-height: 34px; padding: 4px 0; border-bottom: 1px solid var(--d-rule); }
+.door-step:last-child { border-bottom: 0; }
+.door-step__tick { flex: none; display: grid; place-items: center; width: 18px; height: 18px; color: var(--d-pos); }
+.door-step[data-failed] .door-step__tick { color: var(--d-att); }
+.door-step__label { min-width: 0; flex: 1; }
+.door-step[data-undone] .door-step__label { color: var(--d-ink-3); text-decoration: line-through; }
+.door-step__at { flex: none; font-size: 11px; color: var(--d-ink-3); font-variant-numeric: tabular-nums; }
+.door-step__open { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 7px; background: none; color: var(--d-ink-3); cursor: pointer; }
+.door-step__open:hover { color: var(--d-ink); background: var(--d-hover); }
+
+/* chat */
+.door-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.door-chat__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px; }
+.door-chat__msg { margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.door-chat__msg[data-kind='you'] { margin-left: 48px; padding: 8px 11px; border-radius: 12px; background: rgba(255, 255, 255, 0.07); }
+.door-chat__msg[data-kind='error'] { color: var(--d-att); }
+.door-chat__tool { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: var(--d-ink-2); font-size: 12.5px; }
+.door-chat__tool svg { flex: none; color: var(--d-pos); }
+.door-chat__tool span { min-width: 0; flex: 1; }
+.door-chat__busy { margin: 0; color: var(--d-live); font-size: 12px; }
+.door-chat__form { flex: none; display: flex; align-items: flex-end; gap: 6px; padding: 10px 12px 12px; border-top: 1px solid var(--d-rule); }
+.door-chat__form textarea { flex: 1; min-height: 34px; max-height: 140px; padding: 8px 11px; border: 1px solid var(--d-rule-2); border-radius: 11px; background: rgba(255, 255, 255, 0.04); color: var(--d-ink); font: inherit; resize: none; field-sizing: content; }
+.door-chat__form textarea:focus { outline: none; border-color: rgba(255, 255, 255, 0.3); }
+
+/* setup */
+.door-facts { display: grid; grid-template-columns: 84px 1fr; gap: 7px 12px; margin: 0 0 16px; }
+.door-facts dt { color: var(--d-ink-3); }
+.door-facts dd { margin: 0; overflow-wrap: anywhere; }
+.door-switch { display: flex; align-items: flex-start; gap: 11px; padding: 11px 0; border-top: 1px solid var(--d-rule); cursor: pointer; }
+.door-switch input { flex: none; margin-top: 3px; accent-color: var(--d-ink); }
+.door-switch span { color: var(--d-ink-2); font-size: 12.5px; }
+.door-switch b { display: block; color: var(--d-ink); font-size: 13px; font-weight: 600; }
+
+/* the Agents surface */
+.door-roster,
+.door-workers,
+.door-orders,
+.door-runs { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.door-roster__row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 5px 8px; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.door-roster__row:hover { background: var(--d-hover); }
+.door-roster__row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.door-roster__row[data-state='never'] { color: var(--d-ink-3); }
+.door-roster__row[data-state='never'] .door-agent__name { color: var(--d-ink-2); }
+.door-roster__fact { margin-left: auto; flex: none; font-size: 11px; color: var(--d-ink-3); }
+.door-roster__row .door-agent__state { margin-left: 0; min-width: 0; }
+.door-workers li { display: grid; grid-template-columns: 1fr; gap: 1px; padding: 7px 8px; border-radius: 10px; }
+.door-workers__spend { font-size: 11.5px; color: var(--d-ink-2); }
+.door-order { padding: 10px 11px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); }
+.door-order + .door-order { margin-top: 6px; }
+.door-order[data-waiting] { box-shadow: inset 0 0 0 1px rgba(255, 196, 150, 0.35); }
+.door-order__head { display: flex; align-items: baseline; gap: 9px; }
+.door-order__name { flex: none; font-size: 11px; color: var(--d-ink-3); font-variant-numeric: tabular-nums; }
+.door-order__title { font-weight: 550; }
+.door-order__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 5px; font-size: 11.5px; color: var(--d-ink-3); }
+.door-order[data-waiting] .door-order__meta span:nth-child(2) { color: var(--d-att); }
+.door-order[data-closed] { background: none; box-shadow: inset 0 0 0 1px var(--d-rule); }
+.door-order[data-closed] .door-order__title { color: var(--d-ink-2); }
+/* What was said on the order: the owner, Claude, and the worker's report. */
+.door-thread { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 0; padding: 9px 0 0; border-top: 1px solid var(--d-rule); list-style: none; }
+.door-thread__who { font-size: 11px; color: var(--d-ink-3); }
+.door-thread p { margin: 2px 0 0; color: var(--d-ink-2); font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.door-order__say { display: flex; gap: 6px; margin-top: 9px; }
+.door-order__say input { flex: 1; min-width: 0; height: 28px; padding: 0 10px; border: 1px solid var(--d-rule-2); border-radius: 9px; background: rgba(255, 255, 255, 0.03); color: var(--d-ink); font: inherit; font-size: 12.5px; }
+.door-order__say input:focus { outline: none; border-color: rgba(255, 255, 255, 0.3); }
+.door-run { border-bottom: 1px solid var(--d-rule); }
+.door-run:last-child { border-bottom: 0; }
+.door-run__row { display: grid; grid-template-columns: 78px 1fr auto; gap: 2px 10px; width: 100%; padding: 8px 4px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.door-run__row:disabled { cursor: default; }
+.door-run__row:not(:disabled):hover { background: var(--d-hover); border-radius: 8px; }
+.door-run__status { font-size: 11.5px; color: var(--d-ink-2); }
+.door-run[data-status='succeeded'] .door-run__status { color: var(--d-pos); }
+.door-run[data-status='failed'] .door-run__status,
+.door-run[data-status='timed_out'] .door-run__status { color: var(--d-att); }
+.door-run[data-status='running'] .door-run__status { color: var(--d-live); }
+.door-run__when { font-size: 11.5px; color: var(--d-ink-3); }
+.door-run__cost { grid-column: 2 / -1; font-size: 11px; color: var(--d-ink-3); }
+.door-run__error { margin: 0 4px 8px 92px; font-size: 11.5px; color: var(--d-att); }
+.door-run__calls { margin: 0 4px 10px 92px; padding: 0; list-style: none; font-size: 12px; color: var(--d-ink-2); }
+.door-run__calls li { padding: 2px 0; }
+.door-run__calls li[data-result='failed'],
+.door-run__calls li[data-result='refused'] { color: var(--d-att); }
+
+@media (prefers-reduced-motion: reduce) {
+  .door-cursor { transition: none; }
+  .door-panel,
+  [data-agent-touched],
+  [data-agent-row][data-pulse] .door-agent__mark,
+  .door-chip[data-pulse] { animation: none; }
+}

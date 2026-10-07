@@ -1,0 +1,10 @@
+# vite depends on esbuild, whose postinstall fetches its platform binary.
+# Approved explicitly so nothing else gets to run install scripts.
+allowBuilds:
+  esbuild: true
+  # Axonix Social (Electron): its postinstall downloads the Electron binary.
+  electron: true
+
+# The March 2025 BlockSuite canary imports an icon name removed in 2.2.x.
+overrides:
+  '@blocksuite/icons': 2.1.75

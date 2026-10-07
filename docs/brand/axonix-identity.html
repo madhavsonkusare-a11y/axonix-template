@@ -1,0 +1,754 @@
+<title>Axonix Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Geist+Mono:wght@400;500&family=Geist:wght@300..700&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --ground: #06070a;
+  --ground-2: #0b0d12;
+  --ink: #f7f9fc;
+  --ink-2: rgba(235, 240, 250, .84);
+  --muted: rgba(226, 234, 252, .62);
+  --faint: rgba(226, 234, 252, .46);
+  --hair: rgba(255, 255, 255, .08);
+  --hair-2: rgba(255, 255, 255, .13);
+  --ice: #7cc4ff;
+  --ice-text: #bfe3ff;
+  --ice-soft: rgba(124, 196, 255, .14);
+  --pos: #5fe0a2;
+  --neg: #ff6b6b;
+  --paper: #eceef2;
+  --paper-ink: #0d0f12;
+  --ui: "Geist", "Segoe UI Variable", system-ui, sans-serif;
+  --mono: "Geist Mono", "Cascadia Code", ui-monospace, monospace;
+  --num: "Azeret Mono", "Geist Mono", ui-monospace, monospace;
+  --eo: cubic-bezier(.16, 1, .3, 1);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 96px; display: grid; gap: 88px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.eyebrow { font: 500 10.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.lede { max-width: 64ch; color: var(--muted); font-size: 14.5px; }
+.sec { display: grid; gap: 22px; }
+.sec__head { display: grid; gap: 10px; }
+.sec__head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.028em; line-height: 1.12; }
+.note { color: var(--faint); font-size: 12.5px; }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+code, .code { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+
+/* ---------- masthead ---------- */
+.mast { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.mast__id { display: flex; align-items: center; gap: 14px; }
+.mast__id svg { height: 26px; width: auto; color: var(--ink); }
+.mast__meta { font: 500 11px/1.4 var(--mono); letter-spacing: .08em; color: var(--faint); text-transform: uppercase; }
+.intro { display: grid; gap: 14px; }
+.intro h1 { font-size: clamp(34px, 5.4vw, 56px); font-weight: 600; letter-spacing: -.035em; line-height: 1.02; max-width: 16ch; }
+
+/* ---------- the window (hero) ---------- */
+.win {
+  position: relative; width: 100%; aspect-ratio: 1040 / 650; border-radius: 18px; overflow: hidden;
+  background: var(--ground);
+  box-shadow: 0 0 0 1px var(--hair), 0 40px 90px -40px rgba(0, 0, 0, .9);
+}
+.screen { position: absolute; left: 0; top: 0; width: 1040px; height: 650px; transform-origin: 0 0; transform: scale(var(--fit, 1)); }
+.g-base { position: absolute; inset: 0; background: radial-gradient(70% 60% at 50% 48%, #0a0d14 0%, var(--ground) 70%); }
+.g-fields {
+  position: absolute; inset: 0; opacity: 0;
+  background:
+    radial-gradient(58% 60% at 84% 4%, rgba(124, 196, 255, .40), rgba(124, 196, 255, 0) 70%),
+    radial-gradient(46% 55% at 62% 30%, rgba(63, 143, 212, .22), rgba(63, 143, 212, 0) 72%),
+    radial-gradient(60% 70% at 6% 100%, rgba(26, 64, 132, .42), rgba(26, 64, 132, 0) 70%),
+    radial-gradient(40% 40% at 40% 78%, rgba(13, 51, 66, .45), rgba(13, 51, 66, 0) 70%);
+}
+.g-grain { position: absolute; inset: 0; background-image: var(--grain); background-size: 160px; opacity: .2; mix-blend-mode: overlay; pointer-events: none; }
+.caption { position: absolute; top: 0; right: 0; display: flex; }
+.caption span { width: 46px; height: 32px; display: grid; place-items: center; color: rgba(226, 234, 252, .38); font: 400 11px var(--ui); }
+
+.stage { position: absolute; left: 0; top: 0; width: 300px; height: 320px; transform-origin: 0 0; will-change: transform; }
+.layer { position: absolute; left: 0; top: 0; width: 300px; height: 320px; overflow: visible; will-change: transform, opacity; }
+.dot { position: absolute; border-radius: 50%; will-change: transform, opacity; pointer-events: none; }
+.halo { background: radial-gradient(circle, rgba(124, 196, 255, .30) 0%, rgba(124, 196, 255, .10) 38%, rgba(124, 196, 255, 0) 68%); }
+.nglow { background: radial-gradient(circle, rgba(214, 238, 255, .9) 0 16%, rgba(124, 196, 255, .42) 36%, rgba(124, 196, 255, 0) 70%); }
+.spark { background: radial-gradient(circle, #fff 0 22%, rgba(191, 227, 255, .95) 34%, rgba(124, 196, 255, .5) 54%, rgba(124, 196, 255, 0) 74%); }
+.soma { background: radial-gradient(circle, rgba(255, 255, 255, .95) 0 7%, rgba(191, 227, 255, .6) 20%, rgba(124, 196, 255, .22) 42%, rgba(124, 196, 255, 0) 66%); }
+.flare { border: 1.5px solid rgba(191, 227, 255, .95); box-shadow: 0 0 14px rgba(124, 196, 255, .65), inset 0 0 10px rgba(124, 196, 255, .35); }
+.letter { position: absolute; overflow: visible; will-change: transform, opacity; }
+
+/* Today cockpit (example content) */
+.home > * { position: absolute; }
+.glass-thick {
+  background: rgba(24, 29, 38, .44);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(22px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 12px 32px rgba(0, 0, 0, .35);
+}
+.glass-thin {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .078), rgba(255, 255, 255, .026));
+  border: 1px solid rgba(255, 255, 255, .085);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .11);
+}
+.card { border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.card .k { font: 500 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.card h4 { margin: 0; font: 600 15px/1.3 var(--ui); letter-spacing: -.01em; color: var(--ink); }
+.card .m { font-size: 12px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 980px; font: 500 12.5px var(--ui); white-space: nowrap; }
+.pill--primary { background: #f7f9fc; color: #06070a; }
+.pill--quiet { border: 1px solid rgba(255, 255, 255, .16); color: var(--ink-2); }
+.flag { display: inline-flex; align-items: center; gap: 4px; font: 500 11px var(--num); color: #ffc496; }
+.blocks { display: grid; gap: 6px; margin-top: 2px; position: relative; }
+.blk { display: flex; gap: 10px; align-items: baseline; font-size: 12.5px; color: var(--ink-2); padding: 5px 8px; border-radius: 9px; border-left: 2px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .03); }
+.blk .num { font-size: 11px; color: var(--muted); min-width: 38px; }
+.blk--live { border-left-color: var(--ice); background: var(--ice-soft); color: #eaf6ff; }
+.nowline { position: absolute; left: -4px; right: 0; top: 46px; height: 1px; background: var(--ice); box-shadow: 0 0 8px var(--ice); }
+.nowline::before { content: ""; position: absolute; left: -2px; top: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--ice); }
+.big { font: 500 27px/1 var(--num); letter-spacing: -.045em; color: var(--ink); }
+.bars { display: flex; align-items: flex-end; gap: 7px; height: 64px; margin-top: auto; }
+.bars span { flex: 1; border-radius: 6px 6px 3px 3px; background: rgba(255, 255, 255, .14); }
+.bars span.t { background: var(--ice); }
+.days { display: flex; gap: 7px; font: 500 9.5px var(--mono); color: var(--faint); }
+.days span { flex: 1; text-align: center; }
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.thumbs span { aspect-ratio: 1; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .08); }
+.timer { font: 500 46px/1 var(--num); letter-spacing: -.05em; color: var(--ink); }
+.ring { width: 92px; height: 92px; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.btn {
+  height: 34px; padding: 0 16px; border-radius: 980px; border: 1px solid var(--hair-2); background: rgba(255, 255, 255, .04);
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  transition: transform 120ms var(--eo), background-color 120ms var(--eo), border-color 120ms var(--eo);
+}
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn:active { transform: scale(.97); }
+.btn--primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btn--primary:hover { background: #fff; }
+.btn[aria-pressed="true"] { border-color: rgba(124, 196, 255, .6); background: var(--ice-soft); color: var(--ice-text); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--ice); }
+.timeline { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
+.timeline div { background: var(--ground); padding: 12px 14px; display: grid; gap: 4px; }
+.timeline .num { font-size: 12px; color: var(--ice-text); }
+.timeline span:last-child { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+/* ---------- specimens ---------- */
+.panel { border: 1px solid var(--hair); border-radius: 18px; background: var(--ground-2); padding: 22px; }
+.panel--paper { background: var(--paper); color: var(--paper-ink); border-color: transparent; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.spec-title { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.spec-title b { font-weight: 600; font-size: 13.5px; }
+.spec-title span { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.panel--paper .spec-title span { color: rgba(13, 15, 18, .5); }
+.anatomy { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+.anatomy svg { width: 100%; height: auto; display: block; }
+.facts { display: grid; gap: 14px; }
+.fact { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.fact i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(124, 196, 255, .5); display: grid; place-items: center; font: 500 10.5px var(--mono); color: var(--ice-text); font-style: normal; }
+.fact b { display: block; font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.fact span { color: var(--muted); font-size: 13px; }
+.ladder { overflow-x: auto; }
+.ladder table { border-collapse: collapse; min-width: 520px; width: 100%; }
+.ladder th { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 0 0 12px; }
+.panel--paper .ladder th { color: rgba(13, 15, 18, .5); }
+.ladder td { padding: 10px 0; vertical-align: middle; border-top: 1px solid var(--hair); }
+.panel--paper .ladder td { border-top-color: rgba(13, 15, 18, .1); }
+.ladder td:first-child { font-size: 12.5px; width: 92px; }
+.ladder svg { display: block; }
+.wm-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; padding-block: 22px; border-top: 1px solid var(--hair); }
+.wm-row:first-child { border-top: 0; padding-top: 4px; }
+.wm-row svg { height: 52px; width: auto; max-width: 100%; color: var(--ink); display: block; }
+.wm-row small { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.list { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.list li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; color: var(--muted); font-size: 13.5px; }
+.list li::before { content: ""; width: 5px; height: 5px; margin-top: 8px; border-radius: 50%; background: var(--ice); }
+.list b { color: var(--ink); font-weight: 600; }
+.lockups { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
+.lockups .panel { display: grid; place-items: center; min-height: 260px; }
+.lockups svg { color: var(--ink); display: block; max-width: 100%; }
+.icons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.icon-cell { display: grid; justify-items: center; gap: 14px; padding: 26px 18px; }
+.icon-cell img, .icon-cell svg { width: min(180px, 100%); height: auto; display: block; }
+.icon-cell p { font-size: 12.5px; color: var(--muted); text-align: center; max-width: 34ch; }
+.taskbars { display: grid; gap: 10px; }
+.taskbar { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-radius: 12px; flex-wrap: wrap; }
+.taskbar--dark { background: #1c1d20; }
+.taskbar--light { background: #f1f2f4; color: #1a1b1e; }
+.taskbar small { font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; opacity: .6; min-width: 64px; }
+.taskbar .pair { display: flex; align-items: center; gap: 8px; }
+.taskbar .pair span { font-size: 11px; opacity: .6; }
+.taskbar img, .taskbar svg { display: block; }
+.states { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.state { border: 1px solid var(--hair); border-radius: 18px; background: var(--ground-2); padding: 16px; display: grid; gap: 12px; }
+.state__stage { position: relative; height: 150px; border-radius: 12px; overflow: hidden; background: radial-gradient(80% 80% at 50% 60%, #0d1118, var(--ground)); }
+.state__stage .mini { position: absolute; left: 50%; top: 50%; width: 300px; height: 320px; transform-origin: 0 0; }
+.state b { font-weight: 600; }
+.state p { font-size: 12.5px; color: var(--muted); }
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.sw { border-radius: 14px; border: 1px solid var(--hair); overflow: hidden; background: var(--ground-2); }
+.sw i { display: block; height: 72px; }
+.sw div { padding: 10px 12px; display: grid; gap: 2px; }
+.sw b { font-size: 13px; font-weight: 600; }
+.sw span { font: 500 11px var(--mono); color: var(--faint); }
+.materials { position: relative; border-radius: 18px; overflow: hidden; min-height: 260px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 28px; }
+.materials__bg { position: absolute; inset: 0; background:
+  radial-gradient(50% 70% at 20% 10%, rgba(124, 196, 255, .45), rgba(124, 196, 255, 0) 70%),
+  radial-gradient(50% 60% at 90% 100%, rgba(26, 64, 132, .6), rgba(26, 64, 132, 0) 70%), var(--ground); }
+.materials__bg::after { content: "AXONIX AXONIX AXONIX"; position: absolute; left: -10px; top: 40%; font: 700 88px/1 var(--ui); letter-spacing: -.04em; color: rgba(255, 255, 255, .07); white-space: nowrap; }
+.materials .g-grain { opacity: .22; }
+.mat { position: relative; border-radius: 18px; padding: 18px; display: grid; align-content: space-between; gap: 30px; min-height: 196px; }
+.mat b { font-size: 14px; font-weight: 600; }
+.mat p { font-size: 12.5px; color: var(--muted); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ring-demo { box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--ice); }
+.next { border-top: 1px solid var(--hair); padding-top: 28px; display: grid; gap: 8px; }
+.next b { font-size: 16px; font-weight: 600; }
+.next p { color: var(--muted); max-width: 70ch; }
+.guides { opacity: 0; transition: opacity 180ms var(--eo); }
+.show-guides .guides { opacity: 1; }
+
+/* startup zoom and the Home landing (tiles after React Bits GlassIcons, MIT + Commons Clause) */
+.zoom { position: absolute; will-change: transform, opacity; }
+.zoom svg, .lk-mark { display: block; width: 100%; height: 100%; }
+.lk-mark { position: absolute; }
+.greet2 { left: 0; width: 1040px; top: 130px; text-align: center; font: 400 13.5px/1.2 var(--ui); color: var(--muted); }
+.greet2 i { font-style: normal; color: var(--faint); margin: 0 4px; }
+.greet2 b { color: var(--ice-text); font-weight: 500; }
+.greet2 kbd { font: 500 10.5px var(--mono); padding: 3px 7px; border-radius: 980px; border: 1px solid rgba(255,255,255,.12); color: var(--ink-2); }
+.g-grain--top { opacity: .12; }
+.tile-wrap { width: 96px; display: grid; justify-items: center; gap: 12px; cursor: pointer; }
+.tile { position: relative; width: 96px; height: 96px; perspective: 24em; transform-style: preserve-3d; transition: transform 160ms var(--eo); }
+.tile__back, .tile__front { position: absolute; inset: 0; border-radius: 28px; transition: transform 300ms var(--eo), opacity 300ms var(--eo); }
+.tile__back { transform: rotate(12deg); transform-origin: 100% 100%; opacity: .92; box-shadow: .5em -.5em .75em rgba(4, 6, 12, .35); }
+.tile__front { display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.15); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), inset 0 1px 0 rgba(255,255,255,.35); -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3); transform-origin: 80% 50%; }
+.tile__front svg { width: 36px; height: 36px; }
+.tile-wrap:hover .tile__back { transform: rotate(22deg) translate3d(-.4em, -.4em, .4em); }
+.tile-wrap:hover .tile__front { transform: translateZ(1.6em); }
+.tile-wrap:active .tile { transform: scale(.97); }
+.tile__label { font: 500 13px var(--ui); color: var(--ink-2); }
+.badge { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #ff453a; color: #fff; font-size: 11.5px; line-height: 24px; text-align: center; transform: translateZ(2em); box-shadow: 0 0 0 2px #0b0e14; }
+
+@media (max-width: 860px) {
+  .grid4, .states, .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .anatomy, .lockups, .icons, .materials { grid-template-columns: minmax(0, 1fr); }
+  .timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .wrap { gap: 64px; }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .wm-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .wm-row svg { height: 38px; }
+  .sec__head h2 { font-size: 25px; }
+}
+</style>
+
+<!-- shared SVG definitions (not display:none, so gradients still resolve) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <path id="mark" d="M150 10C161.046 10 170 18.9543 170 30C170 35.8385 165.25 41.0916 160.328 44.7471C155.714 48.1745 152.045 53.2567 152.002 58.9971C152.001 58.998 152.001 58.9991 152 59V59.0996C152 59.1716 152.002 59.2436 152.003 59.3154C152.004 59.3862 152.005 59.4579 152.007 59.5303C152.008 59.5749 152.01 59.6195 152.012 59.6641C152.705 80.8667 185.343 167.803 223.87 167.998C223.893 167.998 223.916 168 223.939 168C223.946 168 223.952 167.999 223.958 167.999C223.972 167.999 223.986 168 224 168L224.001 167.998C227.93 167.972 231.421 165.494 233.532 162.175C237.139 156.503 243.169 150 250 150C261.046 150 270 158.954 270 170C270 181.046 261.046 190 250 190C243.57 190 237.85 184.239 234.192 178.833C231.57 174.957 227.412 172 222.732 172C222.496 172 222.261 172.009 222.027 172.023C222.018 172.016 222.009 172.008 222 172C183 172 150 232 150 240C150 232 117 172 78 172C77.9906 172.008 77.9811 172.016 77.9717 172.023C77.7379 172.009 77.5032 172 77.2676 172C72.5875 172 68.4302 174.957 65.8076 178.833C62.1497 184.239 56.4296 190 50 190C38.9543 190 30 181.046 30 170C30 158.954 38.9543 150 50 150C56.8312 150 62.8606 156.503 66.4678 162.175C68.5785 165.494 72.0695 167.972 75.998 167.998L76 168C76.0137 168 76.0273 167.999 76.041 167.999C76.0475 167.999 76.054 168 76.0605 168C76.0833 168 76.1062 167.998 76.1289 167.998C114.656 167.804 147.294 80.8669 147.987 59.6641C147.989 59.6195 147.991 59.5749 147.992 59.5303C147.994 59.4579 147.995 59.3862 147.996 59.3154C147.997 59.2435 148 59.1716 148 59.0996C148 59.0869 147.999 59.0742 147.999 59.0615C147.999 59.0409 148 59.0204 148 59C147.999 58.9989 147.998 58.9982 147.997 58.9971C147.954 53.2567 144.286 48.1745 139.672 44.7471C134.75 41.0916 130 35.8385 130 30C130 18.9543 138.954 10 150 10Z"/>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11141b"/><stop offset="1" stop-color="#06070a"/></linearGradient>
+    <radialGradient id="axonGlow" cx="150" cy="236" r="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7cc4ff" stop-opacity=".46"/>
+      <stop offset=".42" stop-color="#3f8fd4" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#0a2240" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".34"/>
+      <stop offset=".3" stop-color="#fff" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".03"/>
+    </linearGradient>
+    <filter id="grainF" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .5 0 0 0 -.2"/>
+    </filter>
+    <clipPath id="plateClip"><rect width="300" height="300" rx="66"/></clipPath>
+    <symbol id="icon-new" viewBox="0 0 300 300">
+      <g clip-path="url(#plateClip)">
+        <rect width="300" height="300" fill="url(#plate)"/>
+        <rect width="300" height="300" fill="url(#axonGlow)"/>
+        <rect width="300" height="300" filter="url(#grainF)" opacity=".55"/>
+      </g>
+      <rect x=".75" y=".75" width="298.5" height="298.5" rx="65.25" fill="none" stroke="url(#bevel)" stroke-width="1.5"/>
+      <use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+    </symbol>
+    <symbol id="icon-new-micro" viewBox="0 0 300 300">
+      <g clip-path="url(#plateClip)">
+        <rect width="300" height="300" fill="url(#plate)"/>
+        <rect width="300" height="300" fill="url(#axonGlow)"/>
+      </g>
+      <use href="#mark" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+    </symbol>
+    <symbol id="icon-old" viewBox="0 0 300 300">
+      <rect width="300" height="300" rx="66" fill="#0D0F12"/>
+      <use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -125)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+
+  <header class="mast">
+    <div class="mast__id" id="mastLockup" aria-label="Axonix"></div>
+    <div class="mast__meta">Identity review · 28 Sep 2026</div>
+  </header>
+
+  <section class="intro" aria-labelledby="t-intro">
+    <h1 id="t-intro">The same mark, drawn with more care, and brought to life.</h1>
+    <p class="lede">Nothing about the shape changes. The refinements fix how it renders small, where it sits in the icon, and how the name is spaced beside it. The mark also gets motion: it opens the app by pulling back from full screen, and its parts become the assistant's states.</p>
+  </section>
+
+  <!-- 1 · STARTUP -->
+  <section class="sec" aria-labelledby="t-signal">
+    <div class="sec__head">
+      <span class="eyebrow">Startup</span>
+      <h2 id="t-signal">The mark pulls back, and Home forms around it</h2>
+      <p class="lede">The mark opens filling the window, centred on its body, then zooms out to its place beside the name. The greeting, the overview cards and the module tiles unfold from it. It is one scale animation plus fades, all on the compositor, so the app loading underneath can't make it stutter.</p>
+    </div>
+    <div class="win" id="win" role="img" aria-label="Axonix startup: the mark zooms out from full screen to the Home lockup, then the overview cards and module tiles form below it">
+      <div class="screen" id="screen">
+        <div class="g-base"></div>
+        <div class="g-fields" id="fields"></div>
+        <div class="g-grain"></div>
+        <div class="caption" aria-hidden="true"><span>&#x2014;</span><span>&#x25A2;</span><span>&#x2715;</span></div>
+        <div class="home" id="home" aria-hidden="true">
+          <svg class="lk-mark" id="lkMark" viewBox="30 10 240 230" preserveAspectRatio="none"><use href="#mark" fill="#f7f9fc"/></svg>
+          <div class="greet2" data-rise>Good evening <i>&#183;</i> Monday 28 September <i>&#183;</i> <b>3 due today</b> <i>&#183;</i> <kbd>Ctrl K</kbd> to ask or add anything</div>
+          <article class="card glass-thin" data-rise style="left:72px;top:172px;width:212px;height:196px">
+            <span class="k">Next up</span>
+            <h4>Axonix overhaul, phase 1</h4>
+            <span class="m">Tokens, the refined mark, the startup zoom</span>
+            <span class="flag">&#9873; P2 &#183; due 21:00</span>
+            <span style="margin-top:auto;align-self:flex-start" class="pill pill--quiet">Open task</span>
+          </article>
+          <article class="card glass-thin" data-rise style="left:300px;top:172px;width:212px;height:196px">
+            <span class="k">Today</span>
+            <div class="blocks">
+              <div class="blk"><span class="num">17:30</span>Gym</div>
+              <div class="blk blk--live"><span class="num">18:30</span>Deep work</div>
+              <div class="blk"><span class="num">20:30</span>Call home</div>
+              <div class="blk"><span class="num">21:30</span>Read</div>
+              <div class="nowline"></div>
+            </div>
+          </article>
+          <article class="card glass-thin" data-rise style="left:528px;top:172px;width:212px;height:196px">
+            <span class="k">This week</span>
+            <span class="big num">&#8377;4,820</span>
+            <span class="m">spent &#183; <span class="num">&#8722;12%</span> on last week</span>
+            <div class="bars" style="height:52px"><span style="height:48%"></span><span style="height:30%"></span><span style="height:72%"></span><span style="height:22%"></span><span style="height:54%"></span><span style="height:38%"></span><span class="t" style="height:62%"></span></div>
+          </article>
+          <article class="card glass-thin" data-rise style="left:756px;top:172px;width:212px;height:196px">
+            <span class="k">Focus</span>
+            <span class="timer" style="font-size:40px">25:00</span>
+            <span class="m">On: Axonix overhaul, phase 1 &#183; 2h 10m today</span>
+            <span class="pill pill--primary" style="margin-top:auto;align-self:flex-start">Start focus</span>
+          </article>
+          <div class="tile-wrap" data-rise="tile" style="left:132px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#9db9ff,#3d6fe6)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span></span><span class="tile__label">Finance</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:268px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#cdeaff,#4f9fe6)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.3 4.6-5"/></svg></span><span class="badge num">3</span></span><span class="tile__label">Tasks</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:404px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#b3ecd2,#34b37a)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span></span><span class="tile__label">Calendar</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:540px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#eef0f3,#7d858f)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12A.5.5 0 0 1 6 20z"/><path d="M9 11h7M9 15h5"/></svg></span></span><span class="tile__label">Notes</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:676px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#f5dcc0,#c0875a)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V9M10 13h4"/></svg></span></span><span class="tile__label">Storeroom</span></div>
+          <div class="tile-wrap" data-rise="tile" style="left:812px;top:404px"><span class="tile"><span class="tile__back" style="background:linear-gradient(160deg,#ffcfa6,#f2694f)"></span><span class="tile__front"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="10.5" r="2.5"/><path d="M3 19c.8-3 2.8-4.5 5-4.5s4.2 1.5 5 4.5M14 15.2c.8-.5 1.6-.7 2.5-.7 1.9 0 3.4 1.3 4 3.5"/></svg></span><span class="badge num">12</span></span><span class="tile__label">Social</span></div>
+        </div>
+        <div class="zoom" id="zoom"><svg viewBox="30 10 240 230" preserveAspectRatio="none"><use href="#mark" fill="#f7f9fc"/></svg></div>
+        <div class="g-grain g-grain--top"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn btn--primary" id="replay" type="button">Replay</button>
+      <button class="btn" id="slow" type="button" aria-pressed="false">Slow motion (&#188;&#215;)</button>
+      <button class="btn" id="skip" type="button">Skip to end</button>
+      <span class="note">Any key skips, as it will in the app. Card content is an example.</span>
+    </div>
+    <div class="timeline" aria-label="Sequence timing">
+      <div><span class="num">0.00s</span><span>The mark fills the window, centred on its body</span></div>
+      <div><span class="num">0.14s</span><span>It pulls back: one zoom, eased in and out</span></div>
+      <div><span class="num">1.00s</span><span>AXONIX slides out beside it</span></div>
+      <div><span class="num">1.08s</span><span>The greeting settles under the lockup</span></div>
+      <div><span class="num">1.19s</span><span>Overview cards unfold, left to right</span></div>
+      <div><span class="num">1.34s</span><span>Module tiles follow. Settled by 1.8s</span></div>
+    </div>
+  </section>
+
+  <!-- 2 · THE MARK -->
+  <section class="sec" aria-labelledby="t-mark">
+    <div class="sec__head">
+      <span class="eyebrow">The mark</span>
+      <h2 id="t-mark">It already draws a neuron</h2>
+      <p class="lede">Three round terminals feed one body that narrows to a single point. That reading drives the assistant's states and the loading pulse the app already has, and the startup zoom centres on the body.</p>
+    </div>
+    <div class="anatomy">
+      <div class="panel">
+        <svg viewBox="0 0 520 300" role="img" aria-label="The mark with its parts labelled">
+          <g transform="translate(110 20)">
+            <use href="#mark" fill="#f7f9fc"/>
+          </g>
+          <g stroke="rgba(124,196,255,.7)" stroke-width="1" fill="none">
+            <path d="M282 50 H400"/><path d="M382 190 H430"/><path d="M138 190 H90"/><path d="M250 140 H96"/><path d="M262 260 H400"/>
+          </g>
+          <g fill="#7cc4ff"><circle cx="282" cy="50" r="3"/><circle cx="382" cy="190" r="3"/><circle cx="138" cy="190" r="3"/><circle cx="250" cy="140" r="3"/><circle cx="262" cy="260" r="3"/></g>
+          <g font-family="Geist Mono, ui-monospace, monospace" font-size="11" fill="rgba(226,234,252,.7)" letter-spacing=".06em">
+            <text x="406" y="54">INPUT 1</text><text x="436" y="194">INPUT 3</text><text x="20" y="194">INPUT 2</text>
+            <text x="52" y="144">BODY</text><text x="406" y="264">OUTPUT</text>
+          </g>
+        </svg>
+      </div>
+      <div class="facts">
+        <div class="fact"><i>1</i><div><b>Terminals are inputs</b><span>Money, time and ideas arrive from the modules. The nodes breathe while the assistant listens.</span></div></div>
+        <div class="fact"><i>2</i><div><b>The body is Axonix</b><span>Signals meet here. The startup zoom is centred on it, and the glow sits here while the assistant works.</span></div></div>
+        <div class="fact"><i>3</i><div><b>The point is the output</b><span>What gets done. The only place the mark fires light from, which is also where the new icon's glow comes from.</span></div></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <div class="spec-title"><b>Optical sizes, on dark</b><span>Rendered at real pixels</span></div>
+        <div class="ladder" id="ladderDark"></div>
+      </div>
+      <div class="panel panel--paper">
+        <div class="spec-title"><b>Optical sizes, on light</b><span>Rendered at real pixels</span></div>
+        <div class="ladder" id="ladderLight"></div>
+      </div>
+    </div>
+    <ul class="list">
+      <li><span><b>The necks are 4 units wide.</b> At 32px and below that is under half a pixel, so the three nodes float free of the body. Measured, not estimated: 4 units at the top neck, 4 at the side necks.</span></li>
+      <li><span><b>Two optical masters fix it without touching the drawing.</b> The same outline grows by 1.5 units from 33 to 95px and by 3.5 units at 32px and under (necks 7 and 11 units). From 96px up, the original draws.</span></li>
+    </ul>
+
+    <div class="grid2">
+      <div class="panel" id="centreDemo">
+        <div class="spec-title"><b>Optical centre</b><span>Icon plate, 300 units</span></div>
+        <div class="grid2" style="gap:12px">
+          <figure style="margin:0;display:grid;gap:8px;justify-items:center">
+            <svg viewBox="0 0 300 300" width="100%" style="max-width:200px"><use href="#icon-old"/>
+              <g class="guides"><path d="M0 150H300" stroke="#7cc4ff" stroke-dasharray="5 5"/><circle cx="150" cy="165.6" r="5" fill="#ffc496"/></g></svg>
+            <figcaption class="note">Now: box centred</figcaption>
+          </figure>
+          <figure style="margin:0;display:grid;gap:8px;justify-items:center">
+            <svg viewBox="0 0 300 300" width="100%" style="max-width:200px"><rect width="300" height="300" rx="66" fill="#0D0F12"/><use href="#mark" fill="#fff" transform="translate(150 150) scale(.7) translate(-150 -136)"/>
+              <g class="guides"><path d="M0 150H300" stroke="#7cc4ff" stroke-dasharray="5 5"/><circle cx="150" cy="157.9" r="5" fill="#ffc496"/></g></svg>
+            <figcaption class="note">Refined: weight centred</figcaption>
+          </figure>
+        </div>
+        <div class="row" style="margin-top:14px"><button class="btn" id="guides" type="button" aria-pressed="false">Show centres</button><span class="note">Blue: plate centre. Amber: the mark's centre of weight.</span></div>
+      </div>
+      <div class="panel" style="display:grid;align-content:center;gap:14px">
+        <b style="font-size:15px">The weight sits 10% low</b>
+        <p class="note" style="font-size:13.5px;color:var(--muted)">The mark's box is centred at y&nbsp;=&nbsp;<span class="num">124.6</span>, but its ink is centred at y&nbsp;=&nbsp;<span class="num">147.3</span>. The heavy body is low and the top is a single small node. Centring the box leaves the icon looking dropped.</p>
+        <p class="note" style="font-size:13.5px;color:var(--muted)">The refined icon centres at y&nbsp;=&nbsp;<span class="num">136</span>, halfway between the two. That is the usual optical compromise: the sharp point carries almost no weight, so its margin reads larger than it measures.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WORDMARK -->
+  <section class="sec" aria-labelledby="t-word">
+    <div class="sec__head">
+      <span class="eyebrow">Wordmark</span>
+      <h2 id="t-word">The name follows the mark</h2>
+      <p class="lede">The old wordmark was heavy, tightly and unevenly spaced (the X and O overlap by 1.8 units), and set 6 units under the mark's point. The refined one is drawn from strokes on a 100-unit cap height, so every letter shares one weight.</p>
+    </div>
+    <div class="panel">
+      <div class="wm-row"><small>Now</small><svg viewBox="58 243 184 42" aria-label="Current wordmark"><path fill="currentColor" d="M60.152 281L72.536 246.44H78.872L67.496 281H60.152ZM85.496 281L74.168 246.44H80.792L93.176 281H85.496ZM66.68 267.608H86.072V273.368H66.68V267.608ZM118.152 281L108.6 265.88L95.2558 246.44H103.896L112.872 260.696L126.792 281H118.152ZM109.656 260.648L118.968 246.44H126.792L112.104 266.84L109.656 260.648ZM111.336 267.032L102.168 281H94.3438L108.888 260.84L111.336 267.032ZM142.654 281.48C140.094 281.48 137.726 281.048 135.55 280.184C133.406 279.32 131.534 278.104 129.934 276.536C128.366 274.936 127.134 273.048 126.238 270.872C125.374 268.664 124.942 266.232 124.942 263.576C124.942 260.056 125.694 256.984 127.198 254.36C128.702 251.704 130.782 249.64 133.438 248.168C136.126 246.696 139.182 245.96 142.606 245.96C146.094 245.96 149.166 246.696 151.822 248.168C154.478 249.64 156.558 251.704 158.062 254.36C159.598 257.016 160.366 260.104 160.366 263.624C160.366 266.248 159.918 268.664 159.022 270.872C158.158 273.048 156.926 274.936 155.326 276.536C153.758 278.104 151.886 279.32 149.71 280.184C147.566 281.048 145.214 281.48 142.654 281.48ZM142.606 275.624C144.622 275.624 146.398 275.112 147.934 274.088C149.47 273.064 150.67 271.656 151.534 269.864C152.43 268.04 152.878 265.928 152.878 263.528C152.878 261.16 152.446 259.096 151.582 257.336C150.718 255.576 149.518 254.216 147.982 253.256C146.446 252.296 144.654 251.816 142.606 251.816C140.59 251.816 138.814 252.296 137.278 253.256C135.742 254.216 134.542 255.576 133.678 257.336C132.846 259.064 132.43 261.128 132.43 263.528C132.43 265.96 132.862 268.088 133.726 269.912C134.59 271.704 135.79 273.112 137.326 274.136C138.862 275.128 140.622 275.624 142.606 275.624ZM163.239 281V246.44H172.791L188.151 276.968L185.799 277.544V246.44H192.999V281H183.447L168.087 250.472L170.439 249.896V281H163.239ZM196.826 281V246.44H204.218V281H196.826ZM230.421 281L220.869 265.88L207.525 246.44H216.165L225.141 260.696L239.061 281H230.421ZM221.925 260.648L231.237 246.44H239.061L224.373 266.84L221.925 260.648ZM223.605 267.032L214.437 281H206.613L221.157 260.84L223.605 267.032Z"/></svg></div>
+      <div class="wm-row"><small>Refined</small><svg viewBox="-4 -9 574 118" aria-label="Refined wordmark"><path fill="currentColor" d="M0 100L47 -4L94 100L77.54 100L47 32.42L16.46 100ZM105 0L123.29 0L191 100L172.71 100ZM170.71 0L189 0L121.29 100L103 100ZM206 50A51.6 51.6 0 1 1 309.2 50A51.6 51.6 0 1 1 206 50ZM222 50A35.6 35.6 0 1 0 293.2 50A35.6 35.6 0 1 0 222 50ZM331.2 0L346.2 0L346.2 100L331.2 100ZM398.2 0L413.2 0L413.2 100L398.2 100ZM331.2 0L347.7 0L413.2 100L396.7 100ZM443.2 0L458.2 0L458.2 100L443.2 100ZM479.2 0L497.49 0L565.2 100L546.91 100ZM544.91 0L563.2 0L495.49 100L477.2 100Z"/></svg></div>
+    </div>
+    <ul class="list">
+      <li><span><b>The A becomes a &#923;.</b> It drops its crossbar and takes the mark's point, sharpened with 4 units of overshoot so it stands as tall as the flat letters.</span></li>
+      <li><span><b>Spacing by shape.</b> Gaps of <span class="num">9 · 15 · 22 · 30 · 19</span> on a 100 cap: diagonals tuck in, the straight N&#8211;I pair gets the most air.</span></li>
+      <li><span><b>Lighter, so the mark leads.</b> Stems are 15% of the cap height, down from 21%. Rounds run one unit heavier, N's diagonal 8% lighter, and X crosses above centre.</span></li>
+    </ul>
+    <div class="lockups">
+      <div class="panel"><svg id="lockV" viewBox="20 0 260 322" style="width:170px" aria-label="Vertical lockup"></svg></div>
+      <div class="panel" style="gap:28px">
+        <svg id="lockH" viewBox="20 0 980 250" style="width:min(520px,100%)" aria-label="Horizontal lockup"></svg>
+        <svg id="lockH2" viewBox="20 0 980 250" style="width:96px" aria-label="Horizontal lockup at title-bar size"></svg>
+      </div>
+    </div>
+    <p class="note">Vertical lockup: 38 units between point and name, up from 6. Horizontal: the name sits on the arms' axis (y&nbsp;=&nbsp;170), so the right node leads into the A. Smallest: title-bar size.</p>
+  </section>
+
+  <!-- 4 · ICON -->
+  <section class="sec" aria-labelledby="t-icon">
+    <div class="sec__head">
+      <span class="eyebrow">App icon</span>
+      <h2 id="t-icon">A plate that glows from the point</h2>
+      <p class="lede">Same near-black plate and white mark, now weight-centred, with fine grain, a glass edge along the top, and ice-blue light rising from the output point. Under 33px the micro master draws and the grain is left out.</p>
+    </div>
+    <div class="icons">
+      <div class="panel icon-cell"><img alt="Current Axonix icon" src="data:image/png;base64,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"><p>Now: flat plate, box centred.</p></div>
+      <div class="panel icon-cell"><svg viewBox="0 0 300 300" role="img" aria-label="Refined Axonix icon"><use href="#icon-new"/></svg><p>Refined: weight centred, grain, glass edge, light from the point.</p></div>
+    </div>
+    <div class="taskbars">
+      <div class="taskbar taskbar--dark" id="tbDark"></div>
+      <div class="taskbar taskbar--light" id="tbLight"></div>
+    </div>
+  </section>
+
+  <!-- 5 · ASSISTANT -->
+  <section class="sec" aria-labelledby="t-agent">
+    <div class="sec__head">
+      <span class="eyebrow">The mark is the assistant</span>
+      <h2 id="t-agent">Four states, the same parts</h2>
+      <p class="lede">The mark sits in the Home lockup and in a corner of every module, and it is how the assistant shows what it is doing. A state's loop runs only while that state holds; idle draws nothing, so an idle Axonix stays at zero restyles.</p>
+    </div>
+    <div class="states">
+      <div class="state"><div class="state__stage" data-state="idle"></div><div><b>Idle</b><p>Still. No loop runs.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="listen"></div><div><b>Listening</b><p>The terminals breathe in turn while you type or talk.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="work"></div><div><b>Working</b><p>The signal runs node, body, point: the app's axon pulse, drawn in the mark itself.</p></div></div>
+      <div class="state"><div class="state__stage" data-state="done"></div><div><b>Done</b><p>One fire from the point, then still.</p></div></div>
+    </div>
+  </section>
+
+  <!-- 6 · SYSTEM -->
+  <section class="sec" aria-labelledby="t-system">
+    <div class="sec__head">
+      <span class="eyebrow">The system around it</span>
+      <h2 id="t-system">Monochrome, one ice-blue accent, glass</h2>
+      <p class="lede">These are your answers from today, drawn as tokens. Chrome is black and white. Ice blue marks focus, selection and anything live. Module colours stay only in their backdrop wash and icon.</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#06070a;border-bottom:1px solid var(--hair)"></i><div><b>Ground</b><span>#06070A</span></div></div>
+      <div class="sw"><i style="background:#f7f9fc"></i><div><b>Ink</b><span>#F7F9FC</span></div></div>
+      <div class="sw"><i style="background:#7cc4ff"></i><div><b>Ice · accent</b><span>#7CC4FF</span></div></div>
+      <div class="sw"><i style="background:#5fe0a2"></i><div><b>Positive</b><span>#5FE0A2 + word</span></div></div>
+      <div class="sw"><i style="background:#ff6b6b"></i><div><b>Negative</b><span>#FF6B6B + word</span></div></div>
+    </div>
+    <div class="row">
+      <span class="pill pill--primary">Start focus</span>
+      <span class="pill pill--quiet">Open task</span>
+      <span class="pill pill--quiet ring-demo">Focused control</span>
+      <span class="note">One white pill per view replaces Apple blue. Focus rings are ice.</span>
+    </div>
+    <div class="materials">
+      <div class="materials__bg"></div>
+      <div class="g-grain"></div>
+      <div class="mat glass-thin"><b>Thin glass: cards</b><p>Translucent fill, rim light and grain, with no per-frame blur. The ground behind a card is a still gradient, so blur would add GPU cost without changing how it looks.</p></div>
+      <div class="mat glass-thick"><b>Thick glass: things that float</b><p>Dock, command bar, sheets and menus. These pass over real content, so they blur and refract. The app's quick-liquid engine stays on sheets and selection lenses.</p></div>
+    </div>
+  </section>
+
+  <section class="next" aria-labelledby="t-next">
+    <span class="eyebrow">Next</span>
+    <b id="t-next">Mark anything you want changed. If nothing, phase 1 starts in the app: tokens, the refined mark, the startup zoom and this Home.</b>
+    <p>The plan is in the repo at <code>docs/plan/12 Visual Overhaul Plan.md</code>. The components we take from Designeer's libraries, and why, are in <code>13 Component Sources.md</code>.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const MARK = "M150 10C161.046 10 170 18.9543 170 30C170 35.8385 165.25 41.0916 160.328 44.7471C155.714 48.1745 152.045 53.2567 152.002 58.9971C152.001 58.998 152.001 58.9991 152 59V59.0996C152 59.1716 152.002 59.2436 152.003 59.3154C152.004 59.3862 152.005 59.4579 152.007 59.5303C152.008 59.5749 152.01 59.6195 152.012 59.6641C152.705 80.8667 185.343 167.803 223.87 167.998C223.893 167.998 223.916 168 223.939 168C223.946 168 223.952 167.999 223.958 167.999C223.972 167.999 223.986 168 224 168L224.001 167.998C227.93 167.972 231.421 165.494 233.532 162.175C237.139 156.503 243.169 150 250 150C261.046 150 270 158.954 270 170C270 181.046 261.046 190 250 190C243.57 190 237.85 184.239 234.192 178.833C231.57 174.957 227.412 172 222.732 172C222.496 172 222.261 172.009 222.027 172.023C222.018 172.016 222.009 172.008 222 172C183 172 150 232 150 240C150 232 117 172 78 172C77.9906 172.008 77.9811 172.016 77.9717 172.023C77.7379 172.009 77.5032 172 77.2676 172C72.5875 172 68.4302 174.957 65.8076 178.833C62.1497 184.239 56.4296 190 50 190C38.9543 190 30 181.046 30 170C30 158.954 38.9543 150 50 150C56.8312 150 62.8606 156.503 66.4678 162.175C68.5785 165.494 72.0695 167.972 75.998 167.998L76 168C76.0137 168 76.0273 167.999 76.041 167.999C76.0475 167.999 76.054 168 76.0605 168C76.0833 168 76.1062 167.998 76.1289 167.998C114.656 167.804 147.294 80.8669 147.987 59.6641C147.989 59.6195 147.991 59.5749 147.992 59.5303C147.994 59.4579 147.995 59.3862 147.996 59.3154C147.997 59.2435 148 59.1716 148 59.0996C148 59.0869 147.999 59.0742 147.999 59.0615C147.999 59.0409 148 59.0204 148 59C147.999 58.9989 147.998 58.9982 147.997 58.9971C147.954 53.2567 144.286 48.1745 139.672 44.7471C134.75 41.0916 130 35.8385 130 30C130 18.9543 138.954 10 150 10Z";
+  const LETTERS = [{"ch":"A","x":0,"w":94,"d":"M0 100L47 -4L94 100L77.54 100L47 32.42L16.46 100Z"},{"ch":"X","x":103,"w":88,"d":"M105 0L123.29 0L191 100L172.71 100ZM170.71 0L189 0L121.29 100L103 100Z"},{"ch":"O","x":206,"w":103.2,"d":"M206 50A51.6 51.6 0 1 1 309.2 50A51.6 51.6 0 1 1 206 50ZM222 50A35.6 35.6 0 1 0 293.2 50A35.6 35.6 0 1 0 222 50Z"},{"ch":"N","x":331.2,"w":82,"d":"M331.2 0L346.2 0L346.2 100L331.2 100ZM398.2 0L413.2 0L413.2 100L398.2 100ZM331.2 0L347.7 0L413.2 100L396.7 100Z"},{"ch":"I","x":443.2,"w":15,"d":"M443.2 0L458.2 0L458.2 100L443.2 100Z"},{"ch":"X","x":477.2,"w":88,"d":"M479.2 0L497.49 0L565.2 100L546.91 100ZM544.91 0L563.2 0L495.49 100L477.2 100Z"}];
+  const EO = 'cubic-bezier(.16,1,.3,1)';
+  const IO = 'cubic-bezier(.77,0,.175,1)';
+  const NS = 'http://www.w3.org/2000/svg';
+  const NODES = [[150, 30], [50, 170], [250, 170]];
+  const SOMA = [150, 157];
+  const TIP = [150, 240];
+  const WM = { width: 187, left: 56.5, top: 278 };   // splash wordmark, in stage units
+  const ws = WM.width / 565.2;
+
+  const div = (cls, parent, css) => { const d = document.createElement('div'); d.className = cls; if (css) Object.assign(d.style, css); parent.appendChild(d); return d; };
+  const svgLayer = (parent, inner, origin) => {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('viewBox', '0 0 300 320'); s.setAttribute('class', 'layer');
+    s.innerHTML = inner; if (origin) s.style.transformOrigin = origin;
+    parent.appendChild(s); return s;
+  };
+  const dotAt = (cls, parent, [x, y], size) => div('dot ' + cls, parent, { left: (x - size / 2) + 'px', top: (y - size / 2) + 'px', width: size + 'px', height: size + 'px' });
+
+  /** The mark as separate compositor layers: halo, body, nodes, glows, sparks, soma, fire, flare. */
+  function buildMark(host) {
+    const m = {};
+    m.halo = dotAt('halo', host, SOMA, 380);
+    m.body = svgLayer(host, `<path d="${MARK}" fill="#f7f9fc"/>`, `${SOMA[0]}px ${SOMA[1]}px`);
+    m.nodes = NODES.map(([x, y]) => svgLayer(host, `<circle cx="${x}" cy="${y}" r="20" fill="#f7f9fc"/>`, `${x}px ${y}px`));
+    m.glows = NODES.map((p) => dotAt('nglow', host, p, 76));
+    m.sparks = NODES.map((p) => dotAt('spark', host, p, 18));
+    m.soma = dotAt('soma', host, SOMA, 110);
+    m.fire = dotAt('spark', host, SOMA, 20);
+    m.flare = dotAt('flare', host, TIP, 40);
+    [m.halo, m.body, ...m.nodes, ...m.glows, ...m.sparks, m.soma, m.fire, m.flare].forEach((e) => (e.style.opacity = 0));
+    return m;
+  }
+
+  function buildWordmark(host) {
+    return LETTERS.map((l) => {
+      const s = document.createElementNS(NS, 'svg');
+      s.setAttribute('viewBox', `${l.x - 3} -8 ${l.w + 6} 116`);
+      s.setAttribute('class', 'letter');
+      Object.assign(s.style, { left: (WM.left + (l.x - 3) * ws) + 'px', top: (WM.top - 8 * ws) + 'px', width: ((l.w + 6) * ws) + 'px', height: (116 * ws) + 'px', opacity: 0 });
+      s.innerHTML = `<path d="${l.d}" fill="#f7f9fc"/>`;
+      host.appendChild(s);
+      return { el: s, centre: WM.left + (l.x + l.w / 2) * ws };
+    });
+  }
+
+  // ---------- lockups, ladders, icons (static) ----------
+  const markUse = (fill, extra = '') => `<path d="${MARK}" fill="${fill}" ${extra}/>`;
+  const wordPath = LETTERS.map((l) => l.d).join('');
+  const word = (tx, ty, sc, fill) => `<path d="${wordPath}" fill="${fill}" transform="translate(${tx} ${ty}) scale(${sc})"/>`;
+  document.getElementById('lockV').innerHTML = markUse('currentColor') + word(WM.left, WM.top, ws, 'currentColor');
+  const hl = markUse('currentColor') + word(364, 115, 1.1, 'currentColor');
+  document.getElementById('lockH').innerHTML = hl;
+  document.getElementById('lockH2').innerHTML = markUse('currentColor', 'stroke="currentColor" stroke-width="7" stroke-linejoin="round"') + word(364, 115, 1.1, 'currentColor');
+  const mast = document.getElementById('mastLockup');
+  mast.innerHTML = `<svg viewBox="20 0 980 250" aria-hidden="true">${markUse('currentColor', 'stroke="currentColor" stroke-width="7" stroke-linejoin="round"')}${word(364, 115, 1.1, 'currentColor')}</svg>`;
+
+  function ladder(id, ink) {
+    const sizes = [16, 20, 24, 32, 48, 64];
+    const opt = (px) => (px <= 32 ? 7 : px < 96 ? 3 : 0);
+    const cell = (px, stroke) => `<td><svg width="${px}" height="${px}" viewBox="20 0 260 250">${markUse(ink, stroke ? `stroke="${ink}" stroke-width="${stroke}" stroke-linejoin="round"` : '')}</svg></td>`;
+    document.getElementById(id).innerHTML = `<table><thead><tr><th></th>${sizes.map((s) => `<th class="num">${s}px</th>`).join('')}</tr></thead><tbody>
+      <tr><td>Now</td>${sizes.map((s) => cell(s, 0)).join('')}</tr>
+      <tr><td>Optical</td>${sizes.map((s) => cell(s, opt(s))).join('')}</tr></tbody></table>`;
+  }
+  ladder('ladderDark', '#f7f9fc');
+  ladder('ladderLight', '#0d0f12');
+
+  const ICON = document.querySelector('.icon-cell img').getAttribute('src');
+  function taskbar(id, label) {
+    const cells = [24, 32, 48].map((px) => `<div class="pair"><img width="${px}" height="${px}" alt="Current icon at ${px}px" src="${ICON}"><svg width="${px}" height="${px}" viewBox="0 0 300 300" role="img" aria-label="Refined icon at ${px}px"><use href="${px <= 32 ? '#icon-new-micro' : '#icon-new'}"/></svg><span class="num">${px}</span></div>`).join('');
+    document.getElementById(id).innerHTML = `<small>${label}</small>${cells}<span class="note" style="margin-left:auto">Each pair: now, refined</span>`;
+  }
+  taskbar('tbDark', 'Dark bar');
+  taskbar('tbLight', 'Light bar');
+
+  document.getElementById('guides').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+    document.getElementById('centreDemo').classList.toggle('show-guides', on);
+  });
+
+  // ---------- Startup: the pull-back ----------
+  const win = document.getElementById('win');
+  const screen = document.getElementById('screen');
+  const zoom = document.getElementById('zoom');
+  const lkMark = document.getElementById('lkMark');
+  const home = document.getElementById('home');
+  const fields = document.getElementById('fields');
+  const fit = () => screen.style.setProperty('--fit', win.clientWidth / 1040);
+  new ResizeObserver(fit).observe(win); fit();
+
+  // Lockup on the 1040 x 650 screen: mark 58px tall, the name sitting on the arms' axis (y = 170).
+  const MH = 58, u = MH / 230, MW = 240 * u, CAP = MH / 2.09, c = CAP / 100, GAP = 0.85 * CAP;
+  const LW = MW + GAP + 565.2 * c, LX = 520 - LW / 2, LY = 56;
+  Object.assign(lkMark.style, { left: LX + 'px', top: LY + 'px', width: MW + 'px', height: MH + 'px' });
+  const wordLeft = LX + MW + GAP, capTop = LY + 160 * u - CAP / 2;
+  const letters = LETTERS.map((l) => {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('viewBox', `${l.x - 3} -8 ${l.w + 6} 116`);
+    s.setAttribute('class', 'letter');
+    Object.assign(s.style, { left: (wordLeft + (l.x - 3) * c) + 'px', top: (capTop - 8 * c) + 'px', width: ((l.w + 6) * c) + 'px', height: (116 * c) + 'px' });
+    s.innerHTML = `<path d="${l.d}" fill="#f7f9fc"/>`;
+    home.appendChild(s);
+    return s;
+  });
+
+  // One scale about a fixed point Q, chosen so the mark starts with its body centred in the window
+  // and lands exactly on the lockup. The element is laid out at the big size, so it stays sharp.
+  const S0 = (650 * 1.65) / MH;
+  const F = [LX + MW / 2, LY + MH / 2];
+  const C0 = [520, 325 - 32 * u * S0];
+  const Q = [(S0 * F[0] - C0[0]) / (S0 - 1), (S0 * F[1] - C0[1]) / (S0 - 1)];
+  const BW = MW * S0, BH = MH * S0, BL = C0[0] - BW / 2, BT = C0[1] - BH / 2;
+  Object.assign(zoom.style, { left: BL + 'px', top: BT + 'px', width: BW + 'px', height: BH + 'px', transformOrigin: `${Q[0] - BL}px ${Q[1] - BT}px` });
+
+  // Sampled in log space so the zoom speed feels even, eased with the house in-out curve.
+  const bez = (x1, y1, x2, y2) => {
+    const f = (a, b, t) => 3 * a * t * (1 - t) ** 2 + 3 * b * t * t * (1 - t) + t ** 3;
+    return (x) => { let lo = 0, hi = 1, t = x; for (let i = 0; i < 40; i++) { const v = f(x1, x2, t); if (Math.abs(v - x) < 1e-6) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; } return f(y1, y2, t); };
+  };
+  const EIO = bez(0.77, 0, 0.175, 1);
+  const zoomFrames = Array.from({ length: 41 }, (_, i) => ({ offset: i / 40, transform: `scale(${Math.pow(S0, -EIO(i / 40))})` }));
+
+  const HOLD = 140, Z = 1050;
+  const risers = [...home.querySelectorAll('[data-rise]')];
+  let anims = [], rate = 1, playing = false;
+
+  function reset() {
+    anims.forEach((a) => a.cancel()); anims = [];
+    zoom.style.opacity = 1; lkMark.style.opacity = 0; fields.style.opacity = 0;
+    [...letters, ...risers].forEach((e) => (e.style.opacity = 0));
+  }
+  const run = (el, frames, opts) => { const a = el.animate(frames, { fill: 'both', easing: EO, ...opts }); a.playbackRate = rate; anims.push(a); return a; };
+
+  function play() {
+    reset(); playing = true;
+    run(zoom, zoomFrames, { delay: HOLD, duration: Z, easing: 'linear' });
+    run(zoom, [{ opacity: 1 }, { opacity: 0 }], { delay: HOLD + Z, duration: 1, fill: 'forwards' });
+    run(lkMark, [{ opacity: 0 }, { opacity: 1 }], { delay: HOLD + Z, duration: 1 });
+    run(fields, [{ opacity: 0 }, { opacity: 1 }], { delay: HOLD + Z * 0.4, duration: 800 });
+    letters.forEach((l, i) => run(l, [{ opacity: 0, transform: 'translateX(-18px)' }, { opacity: 1, transform: 'none' }], { delay: HOLD + Z * 0.82 + i * 32, duration: 420 }));
+    let card = 0, tile = 0;
+    risers.forEach((r) => {
+      const isTile = r.dataset.rise === 'tile', isCard = r.classList.contains('card');
+      const delay = isTile ? HOLD + Z + 150 + tile++ * 35 : isCard ? HOLD + Z + card++ * 45 : HOLD + Z * 0.9;
+      const from = isTile ? 'translateY(-12px) scale(.9)' : isCard ? 'translateY(-14px) scale(.97)' : 'translateY(-10px)';
+      r.style.transformOrigin = '50% 0';
+      run(r, [{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { delay, duration: 460 });
+    });
+    Promise.all(anims.map((a) => a.finished)).then(() => (playing = false)).catch(() => {});
+  }
+
+  const skip = () => { anims.forEach((a) => { try { a.finish(); } catch (_) {} }); playing = false; };
+  document.getElementById('replay').addEventListener('click', play);
+  document.getElementById('skip').addEventListener('click', skip);
+  document.getElementById('slow').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+    rate = on ? 0.25 : 1; anims.forEach((a) => (a.playbackRate = rate));
+  });
+  window.addEventListener('keydown', (e) => { if (playing && !e.metaKey && !e.ctrlKey && e.key !== 'Tab') skip(); });
+
+  // ---------- assistant states ----------
+  document.querySelectorAll('.state__stage').forEach((box) => {
+    const host = div('mini', box);
+    const place = () => { const k = Math.min(box.clientHeight / 360, box.clientWidth / 320); host.style.transform = `scale(${k}) translate(-150px, -138px)`; };
+    new ResizeObserver(place).observe(box); place();
+    const m = buildMark(host);
+    [m.body, ...m.nodes].forEach((e) => (e.style.opacity = 1));
+    const st = box.dataset.state;
+    const loop = (el, frames, o) => el.animate(frames, { iterations: Infinity, fill: 'both', ...o });
+    if (st === 'listen') {
+      m.halo.style.opacity = .3;
+      m.nodes.forEach((n, i) => loop(n, [{ transform: 'scale(1)' }, { transform: 'scale(1.12)', offset: .4 }, { transform: 'scale(1)' }], { duration: 1800, delay: i * 180, easing: 'ease-in-out' }));
+      m.glows.forEach((g, i) => loop(g, [{ opacity: 0 }, { opacity: .7, offset: .4 }, { opacity: 0 }], { duration: 1800, delay: i * 180, easing: 'ease-in-out' }));
+    }
+    if (st === 'work') {
+      loop(m.halo, [{ opacity: .25 }, { opacity: .5, offset: .5 }, { opacity: .25 }], { duration: 1600, easing: 'ease-in-out' });
+      m.sparks.forEach((s, i) => {
+        const [x, y] = NODES[i];
+        loop(s, [
+          { opacity: 0, transform: 'translate(0,0)' }, { opacity: 1, transform: 'translate(0,0)', offset: .04 },
+          { opacity: 1, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)`, offset: .34 },
+          { opacity: 0, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)`, offset: .38 }, { opacity: 0, transform: `translate(${SOMA[0] - x}px, ${SOMA[1] - y}px)` },
+        ], { duration: 1600, easing: IO });
+      });
+      loop(m.soma, [{ opacity: 0, transform: 'scale(.5)', offset: 0 }, { opacity: 0, transform: 'scale(.5)', offset: .33 }, { opacity: .9, transform: 'scale(1)', offset: .42 }, { opacity: 0, transform: 'scale(1.4)', offset: .56 }, { opacity: 0 }], { duration: 1600 });
+      loop(m.fire, [{ opacity: 0, transform: 'translate(0,0)', offset: 0 }, { opacity: 0, transform: 'translate(0,0)', offset: .4 }, { opacity: 1, transform: 'translate(0,0)', offset: .44 }, { opacity: 1, transform: `translate(0, ${TIP[1] - SOMA[1]}px)`, offset: .6 }, { opacity: 0, transform: `translate(0, ${TIP[1] - SOMA[1]}px)`, offset: .64 }, { opacity: 0 }], { duration: 1600, easing: 'linear' });
+      loop(m.flare, [{ opacity: 0, transform: 'scale(.25)', offset: 0 }, { opacity: 0, transform: 'scale(.25)', offset: .6 }, { opacity: .9, transform: 'scale(.3)', offset: .62 }, { opacity: 0, transform: 'scale(2.6)', offset: .92 }, { opacity: 0 }], { duration: 1600, easing: 'linear' });
+    }
+    if (st === 'done') {
+      const fire = () => {
+        m.flare.animate([{ opacity: .95, transform: 'scale(.25)' }, { opacity: 0, transform: 'scale(3)' }], { duration: 620, easing: EO, fill: 'both' });
+        m.halo.animate([{ opacity: 0 }, { opacity: .6, offset: .25 }, { opacity: 0 }], { duration: 900, easing: EO, fill: 'both' });
+        m.soma.animate([{ opacity: 0, transform: 'scale(.5)' }, { opacity: .7, transform: 'scale(1)', offset: .3 }, { opacity: 0, transform: 'scale(1.3)' }], { duration: 520, easing: EO, fill: 'both' });
+      };
+      fire(); setInterval(fire, 2600);
+    }
+  });
+
+  reset();
+  const start = () => setTimeout(play, 250);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+})();
+</script>
